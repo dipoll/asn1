@@ -5,14 +5,34 @@ import (
 	"testing"
 )
 
+var (
+	testBool byte = 0xBF // PER and UPER in one byte {1 0 1 1 1 1 1 1}
+)
+
 func TestBooleanParsing(t *testing.T) {
-	fmt.Println(appendBit(byte(0), 0))
-	b, err := parseBool([]byte{0x80})
-	if err == nil {
-		t.Errorf("Failed Parse Boolean: %v %v\n", err, 0x80)
+	testBools := []bool{true, false, true, true,
+		true, true, true, true}
+
+	for i, v := range testBools {
+		b, _ := parseBool(uint8(i), testBool)
+		if b != v {
+			t.Errorf("Bool Parse: POS: %d Expected:%v Got: %v\n", i, v, b)
+		}
 	}
-	if b != true {
-		t.Errorf("Failed Parse True Boolean Value\n")
+
+	npos := uint8(0)
+	out := byte(0)
+	for _, v := range testBools {
+		fmt.Printf("POS: %d, Out Value: %X\n", npos, out)
+		npos = appendBool(&out, npos, v)
 	}
-	fmt.Printf("%X\n", appendBit(byte(0), 1))
+	if out != testBool {
+		t.Errorf("Bool Encode Failed: Expect: %X, Got: %X", testBool, out)
+	}
+}
+
+func TestIntegerEncode(t *testing.T) {
+	e := Encoder{}
+	e.addUnsignedNumber(2)
+	fmt.Println("Finished")
 }

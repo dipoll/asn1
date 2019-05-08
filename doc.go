@@ -15,4 +15,6 @@ package asn1per
 		- set
 		- set-of	
 
+	Online testing could be done using perfect tool from Noklava:
+	https://asn1.io/asn1playground/
 */

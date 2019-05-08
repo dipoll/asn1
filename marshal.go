@@ -1,22 +1,38 @@
 package asn1per
 
 import (
-	"encoding/asn1"
 	"fmt"
+	"math/bits"
 )
 
-func parseBool(bytes []byte) (bool, error) {
-	fmt.Println(bytes[0], bytes[0]>>7)
-	if len(bytes) != 1 {
-		return false, asn1.StructuralError{"invalid boolean"}
-	}
-	switch bytes[0] >> 7 {
-	case 0:
-		return false, nil
-	case 1:
+// parseBool parser single boolean value for both
+// aligned and unaligned per from single byte
+func parseBool(offset uint8, bits byte) (bool, error) {
+	pos := 1 << (7 - offset)
+	if (bits & byte(pos)) > 0 {
 		return true, nil
-	default:
-		return false, asn1.SyntaxError{"invalid boolean value"}
 	}
+
 	return false, nil
+}
+
+// appendBool adds boolean value to the single bit
+func appendBool(bits *byte, offset uint8, v bool) uint8 {
+	bit := byte(0)
+	if v {
+		bit = 1
+	}
+	*bits |= (bit << (7 - offset))
+	return offset + 1
+}
+
+// Encoder represents
+type Encoder struct {
+	nbits int64 // Track current number of bits in encoded bytes sequence
+	buf   []byte
+}
+
+func (e *Encoder) addUnsignedNumber(num uint64) error {
+	fmt.Printf("Bits needed to write: %d = %d\n", num, bits.Len64(num))
+	return nil
 }

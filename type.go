@@ -1,14 +1,24 @@
 package asn1per
 
+type PackType uint8
+
 
 const (
-	ALIGNED		= iota
+	ALIGNED		PackType = iota
 	UNALIGNED
 )
 
 
-func appendBit(b byte, bit byte) byte {
-	b <<= 1
-	b |= bit
-	return b
+type Codec struct {
+	pack	PackType
+	bits	uint64	
+}
+
+
+func NewEncoder() *Codec{
+	return &Codec{}
+}
+
+func NewDecoder() *Codec {
+	return &Codec{}
 }
