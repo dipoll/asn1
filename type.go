@@ -8,17 +8,3 @@ const (
 	UNALIGNED
 )
 
-
-type Codec struct {
-	pack	PackType
-	bits	uint64	
-}
-
-
-func NewEncoder() *Codec{
-	return &Codec{}
-}
-
-func NewDecoder() *Codec {
-	return &Codec{}
-}
