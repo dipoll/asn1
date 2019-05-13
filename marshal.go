@@ -40,12 +40,14 @@ type Coder struct {
 
 // addUint64 appends uint64 number to the bytes
 func (e *Coder) addUint64(num uint64, numBits uint64) error {
+
 	tail := uint64(e.buf[len(e.buf)-1])
-	tail <<= numBits
+	tail <<= numBits - e.offset
 	tail |= num
 
 	fmt.Printf("GG: %v\n", bits.Len64(tail))
-
+	fmt.Printf("Number Originale INT: %b\n", num)
+	fmt.Printf("Number after offset 7 bits: %b\n", tail)
 	newOffset := (e.offset + numBits) % 8
 	numBytes := (e.offset + numBits) / 8
 

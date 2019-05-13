@@ -7,7 +7,7 @@ import (
 
 var (
 	testBool byte = 0xBF // PER and UPER in one byte {1 0 1 1 1 1 1 1}
-	boolNumPER []byte = []byte{0x80, 0x01, 0x02} // True and Unconstrained Number
+	boolNumPER []byte = []byte{0x80, 0x01, 0x02} // True and Unconstrained Number=2
 	boolNumUPER []byte = []byte{0x80, 0x81, 0x00}
 	boolNumConstPER []byte = []byte{}
 )
@@ -52,4 +52,6 @@ func TestIntegerEncode(t *testing.T) {
 	e.addBool(true)
 	e.addUint64(2, 7)
 	fmt.Printf("%X\n",e.buf)
+	fmt.Printf("BIN PER: %b\n", boolNumPER)
+	fmt.Printf("BIN UPER: %b\n", boolNumUPER)
 }
