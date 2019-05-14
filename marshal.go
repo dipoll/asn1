@@ -2,8 +2,8 @@ package asn1per
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"math/bits"
 )
 
 // parseBool parser single boolean value for both
@@ -26,6 +26,18 @@ func appendBool(bits *byte, offset uint8, v bool) uint8 {
 	*bits |= (bit << (7 - offset))
 	return offset + 1
 }
+
+// printBytes
+func printBytes(b []byte) {
+	for n, v := range b {
+		fmt.Printf("%08b ", v)
+		if n%2 > 0 {
+			fmt.Println("")
+		}
+	}
+	fmt.Println("")
+}
+
 func NewEncoder() *Coder {
 	return &Coder{
 		buf: []byte{0}}
@@ -33,31 +45,47 @@ func NewEncoder() *Coder {
 
 // Coder represents
 type Coder struct {
-	offset    uint64 // Track current number of bits in encoded bytes sequence
+	offset    uint8 // Track current number of bits in encoded bytes sequence
 	buf       []byte
 	isAligned bool
 }
 
-// addUint64 appends uint64 number to the bytes
-func (e *Coder) addUint64(num uint64, numBits uint64) error {
+// addUint added unsigned integer 64 with number
+// bits in it
+func (e *Coder) addUint(v uint64, n uint8) error {
+	if n > 64 {
+		return errors.New("Number of bits greater than 64")
+	}
 
-	tail := uint64(e.buf[len(e.buf)-1])
-	tail <<= numBits - e.offset
-	tail |= num
+	newNum := uint64(0)
+	newNum = v<<64 - n
 
-	fmt.Printf("GG: %v\n", bits.Len64(tail))
-	fmt.Printf("Number Originale INT: %b\n", num)
-	fmt.Printf("Number after offset 7 bits: %b\n", tail)
-	newOffset := (e.offset + numBits) % 8
-	numBytes := (e.offset + numBits) / 8
+	if e.offset < 8 {
+		newNum = newNum >> e.offset
+	}
 
-	newTail := make([]byte, 4)
-	fmt.Printf("NB: %v, OFF: %v, TLEN: %v, LEN: %v\n", numBytes, newOffset, len(newTail), len(e.buf))
-	binary.PutUvarint(newTail, tail)
-	e.buf = append(e.buf[:len(e.buf)-1], newTail[:3]...)
-	fmt.Printf("FULL NEW LEN: %v\n", len(e.buf))
-	e.offset = newOffset
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, newNum)
 
+	if e.offset < 8 {
+		e.buf[len(e.buf)-1] |= buf[0]
+		buf = buf[1:]
+	}
+	e.offset += n
+	if e.offset <= 8 {
+		return nil
+	}
+
+	nBytes := (e.offset / 8)
+	if nBytes < 1 {
+		return nil
+	}
+	e.offset = e.offset % 8
+	if e.offset > 0 {
+		nBytes++
+	}
+
+	e.buf = append(e.buf, buf[:nBytes-1]...)
 	return nil
 }
 
@@ -67,10 +95,11 @@ func (e *Coder) addBool(v bool) int {
 	if v {
 		bit = 1
 	}
+	fmt.Printf("BOOL: Offset %d, Adding Boolean %v\n", e.offset, v)
 	if e.offset > 7 || len(e.buf) < 1 {
 		e.buf = append(e.buf, byte(0))
+		e.offset = 0
 	}
-	fmt.Println(len(e.buf))
 	e.buf[len(e.buf)-1] |= (bit << (7 - e.offset))
 	e.offset++
 	return 1

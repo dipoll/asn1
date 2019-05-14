@@ -6,24 +6,34 @@ import (
 )
 
 var (
-	testBool byte = 0xBF // PER and UPER in one byte {1 0 1 1 1 1 1 1}
-	boolNumPER []byte = []byte{0x80, 0x01, 0x02} // True and Unconstrained Number=2
-	boolNumUPER []byte = []byte{0x80, 0x81, 0x00}
+	testBool        byte   = 0xBF                     // PER and UPER in one byte {1 0 1 1 1 1 1 1}
+	boolNumPER      []byte = []byte{0x80, 0x01, 0x02} // True and Unconstrained Number=2
+	boolNumUPER     []byte = []byte{0x80, 0x81, 0x00}
 	boolNumConstPER []byte = []byte{}
 )
 
-func equal(a, b []int) bool {
-    if len(a) != len(b) {
-        return false
-    }
-    for i, v := range a {
-        if v != b[i] {
-            return false
-        }
-    }
-    return true
+type tBoolNum struct {
+	isA     bool
+	Boolean bool
+	Integer int64
+	bytes   []byte
 }
 
+var tbBoolNum = []tBoolNum{
+	tBoolNum{true, true, 2, []byte{0x80, 0x01, 0x02}},
+	tBoolNum{false, true, 2, []byte{0x80, 0x81, 0x00}}}
+
+func equal(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
 
 func TestBooleanParsing(t *testing.T) {
 	testBools := []bool{true, false, true, true,
@@ -50,8 +60,15 @@ func TestBooleanParsing(t *testing.T) {
 func TestIntegerEncode(t *testing.T) {
 	e := Coder{}
 	e.addBool(true)
-	e.addUint64(2, 7)
-	fmt.Printf("%X\n",e.buf)
-	fmt.Printf("BIN PER: %b\n", boolNumPER)
-	fmt.Printf("BIN UPER: %b\n", boolNumUPER)
+	e.addBool(true)
+	e.addUint(7, 6)
+	e.addUint(3, 3)
+	//e.addBool(false)
+
+	fmt.Printf("%X\n", e.buf)
+	printBytes(e.buf)
+	fmt.Printf("Offset: %d\n", e.offset)
+	fmt.Printf("Should be: %08b %08b\n", 0xC7, 0x60)
+	//fmt.Printf("BIN PER: %b\n", boolNumPER)
+	//fmt.Printf("BIN UPER: %b\n", boolNumUPER)
 }
