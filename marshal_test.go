@@ -13,17 +13,17 @@ var (
 )
 
 type tBoolNum struct {
-	isA     bool
-	Boolean bool
-	Integer int64
-	bytes   []byte
+	isA      bool
+	Boolean1 bool
+	Integer  uint64
+	bytes    []byte
 }
 
 var tbBoolNum = []tBoolNum{
 	tBoolNum{true, true, 2, []byte{0x80, 0x01, 0x02}},
 	tBoolNum{false, true, 2, []byte{0x80, 0x81, 0x00}}}
 
-func equal(a, b []int) bool {
+func equal(a, b []byte) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -49,7 +49,6 @@ func TestBooleanParsing(t *testing.T) {
 	npos := uint8(0)
 	out := byte(0)
 	for _, v := range testBools {
-		fmt.Printf("POS: %d, Out Value: %X\n", npos, out)
 		npos = appendBool(&out, npos, v)
 	}
 	if out != testBool {
@@ -58,17 +57,44 @@ func TestBooleanParsing(t *testing.T) {
 }
 
 func TestIntegerEncode(t *testing.T) {
-	e := Coder{}
-	e.addBool(true)
-	e.addBool(true)
-	e.addUint(7, 6)
-	e.addUint(3, 3)
+	for i, v := range tbBoolNum {
+		e := Coder{}
+		e.addBool(v.Boolean1)
+		e.addBool(v.Boolean1)
+		e.appendUint64(7, 6)
+		e.appendUint64(3, 3)
+		fmt.Printf("Test %d - %X\n", i, e.buf)
+		printBytes(e.buf)
+		fmt.Printf("Offset: %d\n", e.offset)
+	}
 	//e.addBool(false)
 
-	fmt.Printf("%X\n", e.buf)
-	printBytes(e.buf)
-	fmt.Printf("Offset: %d\n", e.offset)
 	fmt.Printf("Should be: %08b %08b\n", 0xC7, 0x60)
 	//fmt.Printf("BIN PER: %b\n", boolNumPER)
 	//fmt.Printf("BIN UPER: %b\n", boolNumUPER)
+}
+
+func TestConstrainedIntUEncode(t *testing.T) {
+
+}
+
+var tbConstrNumA = []struct {
+	V   int64
+	Min int64
+	Max int64
+	Ref []byte
+}{
+	{-3, -5, 0, []byte{0x40}},
+	{127, 0, 255, []byte{0x40, 0x7F}},
+	{256, 0, 256, []byte{0x40, 0x7F, 0x01, 0x00}}}
+
+func TestConstrainedIntAEncode(t *testing.T) {
+	e := Coder{buf: []byte{0}, isAligned: true}
+	for i, v := range tbConstrNumA {
+		e.appendConstrainedUint64(v.V, v.Min, v.Max)
+		if !equal(e.buf, v.Ref) {
+			t.Errorf("%d: APER Constrained INTEGER(%d..%d): Want %064b \nGot  %064b\n",
+				i, v.Min, v.Max, v.Ref, e.buf)
+		}
+	}
 }
