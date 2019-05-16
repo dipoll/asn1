@@ -62,7 +62,7 @@ func (e *Coder) appendUint64(v uint64, n uint8) error {
 	newNum := uint64(0)
 	newNum = v << uint64(64-n)
 
-	if e.offset < 8 {
+	if  0 < e.offset && e.offset < 8 {
 		newNum = newNum >> e.offset
 	}
 
@@ -126,13 +126,14 @@ func (e *Coder) appendConstrainedUint64(value, min, max int64) int {
 	l := bits.Len64(uint64(rng))
 	if rng > 255 && e.isAligned {
 		if e.offset != 0 {
-			e.offset = 8
+			e.buf = append(e.buf, byte(0))
+			e.offset = 0
 		}
 	}
 	switch {
 	case rng <= 255:
 		e.appendUint64(uint64(value), uint8(l))
-		return l
+		return int(rng)
 	case rng == 256:
 		e.appendUint64(uint64(value), 8)
 		return 8
@@ -141,12 +142,14 @@ func (e *Coder) appendConstrainedUint64(value, min, max int64) int {
 		return 16
 	default:
 		e.appendUint64(uint64(value), uint8(l))
-		return l
-
 	}
 	return l
 }
 
+// BitLen returns encoded length in bits
+func (e Coder) BitLen() int {
+	return (len(e.buf)-1) * 8 + int(e.offset)
+}
 // addBool adds boolean value to the single bit
 func (e *Coder) addBool(v bool) int {
 	if v {

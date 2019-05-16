@@ -1,7 +1,6 @@
 package asn1per
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -56,23 +55,6 @@ func TestBooleanParsing(t *testing.T) {
 	}
 }
 
-func TestIntegerEncode(t *testing.T) {
-	for i, v := range tbBoolNum {
-		e := Coder{}
-		e.addBool(v.Boolean1)
-		e.addBool(v.Boolean1)
-		e.appendUint64(7, 6)
-		e.appendUint64(3, 3)
-		fmt.Printf("Test %d - %X\n", i, e.buf)
-		printBytes(e.buf)
-		fmt.Printf("Offset: %d\n", e.offset)
-	}
-	//e.addBool(false)
-
-	fmt.Printf("Should be: %08b %08b\n", 0xC7, 0x60)
-	//fmt.Printf("BIN PER: %b\n", boolNumPER)
-	//fmt.Printf("BIN UPER: %b\n", boolNumUPER)
-}
 
 func TestConstrainedIntUEncode(t *testing.T) {
 
@@ -82,19 +64,29 @@ var tbConstrNumA = []struct {
 	V   int64
 	Min int64
 	Max int64
+	AL  int
+	UL  int
 	Ref []byte
+	RefU []byte
 }{
-	{-3, -5, 0, []byte{0x40}},
-	{127, 0, 255, []byte{0x40, 0x7F}},
-	{256, 0, 256, []byte{0x40, 0x7F, 0x01, 0x00}}}
+	{-3, -5, 0, 8, 3, []byte{0x40}, []byte{0x40}},
+	{127, 0, 255,16, 11, []byte{0x40, 0x7F},[]byte{0x4F, 0xE0}},
+	{256, 0, 256, 32, 20, []byte{0x40, 0x7F, 0x01, 0x00}, []byte{0x4F,0xF0,0x00}},
+    {-72, -6900, 6546,48,34, []byte{0x40,0x7F,0x01,0x00,0x1A,0xAC}, []byte{0x4F,0xF0,0x06,0xAB,0x00}}}
 
-func TestConstrainedIntAEncode(t *testing.T) {
+func TestConstrainedIntEncode(t *testing.T) {
 	e := Coder{buf: []byte{0}, isAligned: true}
+	ue := Coder{buf: []byte{0}, isAligned: false}
 	for i, v := range tbConstrNumA {
 		e.appendConstrainedUint64(v.V, v.Min, v.Max)
-		if !equal(e.buf, v.Ref) {
-			t.Errorf("%d: APER Constrained INTEGER(%d..%d): Want %064b \nGot  %064b\n",
-				i, v.Min, v.Max, v.Ref, e.buf)
+		ue.appendConstrainedUint64(v.V, v.Min, v.Max)
+		if !equal(e.buf, v.Ref) || e.BitLen() != v.AL {
+			t.Errorf("%d: APER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d (MUSTBE: %d)\n",
+				i, v.Min, v.Max, v.Ref, e.buf, e.BitLen(), v.AL)
+		}
+		if !equal(ue.buf, v.RefU) || ue.BitLen() != v.UL {
+			t.Errorf("%d: UPER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d(MUSTBE: %d)\n",
+				i, v.Min, v.Max, v.Ref, ue.buf, ue.BitLen(), v.UL)
 		}
 	}
 }
