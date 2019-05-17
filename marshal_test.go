@@ -55,24 +55,19 @@ func TestBooleanParsing(t *testing.T) {
 	}
 }
 
-
-func TestConstrainedIntUEncode(t *testing.T) {
-
-}
-
 var tbConstrNumA = []struct {
-	V   int64
-	Min int64
-	Max int64
-	AL  int
-	UL  int
-	Ref []byte
+	V    int64
+	Min  int64
+	Max  int64
+	AL   int
+	UL   int
+	Ref  []byte
 	RefU []byte
 }{
 	{-3, -5, 0, 8, 3, []byte{0x40}, []byte{0x40}},
-	{127, 0, 255,16, 11, []byte{0x40, 0x7F},[]byte{0x4F, 0xE0}},
-	{256, 0, 256, 32, 20, []byte{0x40, 0x7F, 0x01, 0x00}, []byte{0x4F,0xF0,0x00}},
-    {-72, -6900, 6546,48,34, []byte{0x40,0x7F,0x01,0x00,0x1A,0xAC}, []byte{0x4F,0xF0,0x06,0xAB,0x00}}}
+	{127, 0, 255, 16, 11, []byte{0x40, 0x7F}, []byte{0x4F, 0xE0}},
+	{256, 0, 256, 32, 20, []byte{0x40, 0x7F, 0x01, 0x00}, []byte{0x4F, 0xF0, 0x00}},
+	{-72, -6900, 6546, 48, 34, []byte{0x40, 0x7F, 0x01, 0x00, 0x1A, 0xAC}, []byte{0x4F, 0xF0, 0x06, 0xAB, 0x00}}}
 
 func TestConstrainedIntEncode(t *testing.T) {
 	e := Coder{buf: []byte{0}, isAligned: true}
@@ -87,6 +82,24 @@ func TestConstrainedIntEncode(t *testing.T) {
 		if !equal(ue.buf, v.RefU) || ue.BitLen() != v.UL {
 			t.Errorf("%d: UPER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d(MUSTBE: %d)\n",
 				i, v.Min, v.Max, v.RefU, ue.buf, ue.BitLen(), v.UL)
+		}
+	}
+}
+
+func BenchmarkConstrainedIntEncodeA(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		e := Coder{buf: []byte{0}, isAligned: true}
+		for _, v := range tbConstrNumA {
+			e.appendConstrainedUint64(v.V, v.Min, v.Max)
+		}
+	}
+}
+
+func BenchmarkConstrainedIntEncodeU(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		e := Coder{buf: []byte{0}, isAligned: false}
+		for _, v := range tbConstrNumA {
+			e.appendConstrainedUint64(v.V, v.Min, v.Max)
 		}
 	}
 }
