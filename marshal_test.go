@@ -80,13 +80,13 @@ func TestConstrainedIntEncode(t *testing.T) {
 	for i, v := range tbConstrNumA {
 		e.appendConstrainedUint64(v.V, v.Min, v.Max)
 		ue.appendConstrainedUint64(v.V, v.Min, v.Max)
-		if !equal(e.buf, v.Ref) || e.BitLen() != v.AL {
+		if !equal(e.buf, v.Ref) {
 			t.Errorf("%d: APER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d (MUSTBE: %d)\n",
 				i, v.Min, v.Max, v.Ref, e.buf, e.BitLen(), v.AL)
 		}
 		if !equal(ue.buf, v.RefU) || ue.BitLen() != v.UL {
 			t.Errorf("%d: UPER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d(MUSTBE: %d)\n",
-				i, v.Min, v.Max, v.Ref, ue.buf, ue.BitLen(), v.UL)
+				i, v.Min, v.Max, v.RefU, ue.buf, ue.BitLen(), v.UL)
 		}
 	}
 }

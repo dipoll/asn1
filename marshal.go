@@ -59,35 +59,45 @@ func (e *Coder) appendUint64(v uint64, n uint8) error {
 		return errors.New("Number of bits greater than 64")
 	}
 
-	newNum := uint64(0)
-	newNum = v << uint64(64-n)
+	v <<= uint64(64-n)
+	shift := (8 - e.offset)
+	if shift == 8 {
+		e.buf = e.buf[:len(e.buf)-1]
+		shift = 0
+	}
 
 	if  0 < e.offset && e.offset < 8 {
-		newNum = newNum >> e.offset
+		k := v >> (56 + e.offset)
+		e.buf[len(e.buf)-1] |= byte(k)
+		v <<= shift
 	}
 
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, newNum)
+	binary.BigEndian.PutUint64(buf, v)
 
-	if e.offset < 8 {
-		e.buf[len(e.buf)-1] |= buf[0]
-		buf = buf[1:]
+	k := int(n) - int(shift)
+	l := k / 8
+	switch  {
+	case k <= 0:
+		if len(e.buf) == 1 && e.offset == 0 {
+			e.buf = append(e.buf, buf[0])
+			e.offset += n
+			return nil
+		}
+		e.offset += n
+		
+	case k > 8:
+		e.offset = uint8(k % 8)
+		if e.offset == 0 {
+			e.offset = 8
+		} else {
+			l ++
+		}
+	case k < 8:
+		e.offset = uint8(k) 
+		l = 1
 	}
-	e.offset += n
-	if e.offset <= 8 {
-		return nil
-	}
-
-	nBytes := (e.offset / 8)
-	if nBytes < 1 {
-		return nil
-	}
-	e.offset = e.offset % 8
-	if e.offset > 0 {
-		nBytes++
-	}
-
-	e.buf = append(e.buf, buf[:nBytes-1]...)
+	e.buf = append(e.buf, buf[:l]...)
 	return nil
 }
 
@@ -124,25 +134,33 @@ func (e *Coder) appendConstrainedUint64(value, min, max int64) int {
 	rng := (max - min + 1)
 	value -= min
 	l := bits.Len64(uint64(rng))
-	if rng > 255 && e.isAligned {
-		if e.offset != 0 {
-			e.buf = append(e.buf, byte(0))
-			e.offset = 0
-		}
-	}
 	switch {
 	case rng <= 255:
 		e.appendUint64(uint64(value), uint8(l))
 		return int(rng)
 	case rng == 256:
+		if !e.isAligned {
+			e.appendUint64(uint64(value), uint8(8))
+			return l
+		}
+		if e.offset != 0 {
+			e.offset = 8
+		}
 		e.appendUint64(uint64(value), 8)
 		return 8
 	case rng <= 65536:
+		if !e.isAligned {
+			break
+		}
+		if e.offset != 0 {
+			e.offset = 8
+		}
 		e.appendUint64(uint64(value), 16)
 		return 16
 	default:
 		e.appendUint64(uint64(value), uint8(l))
 	}
+	e.appendUint64(uint64(value), uint8(l))
 	return l
 }
 
