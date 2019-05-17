@@ -73,8 +73,8 @@ func TestConstrainedIntEncode(t *testing.T) {
 	e := Coder{buf: []byte{0}, isAligned: true}
 	ue := Coder{buf: []byte{0}, isAligned: false}
 	for i, v := range tbConstrNumA {
-		e.appendConstrainedUint64(v.V, v.Min, v.Max)
-		ue.appendConstrainedUint64(v.V, v.Min, v.Max)
+		e.appendConstrainedInt64(v.V, v.Min, v.Max)
+		ue.appendConstrainedInt64(v.V, v.Min, v.Max)
 		if !equal(e.buf, v.Ref) {
 			t.Errorf("%d: APER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d (MUSTBE: %d)\n",
 				i, v.Min, v.Max, v.Ref, e.buf, e.BitLen(), v.AL)
@@ -90,7 +90,7 @@ func BenchmarkConstrainedIntEncodeA(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		e := Coder{buf: []byte{0}, isAligned: true}
 		for _, v := range tbConstrNumA {
-			e.appendConstrainedUint64(v.V, v.Min, v.Max)
+			e.appendConstrainedInt64(v.V, v.Min, v.Max)
 		}
 	}
 }
@@ -99,7 +99,7 @@ func BenchmarkConstrainedIntEncodeU(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		e := Coder{buf: []byte{0}, isAligned: false}
 		for _, v := range tbConstrNumA {
-			e.appendConstrainedUint64(v.V, v.Min, v.Max)
+			e.appendConstrainedInt64(v.V, v.Min, v.Max)
 		}
 	}
 }

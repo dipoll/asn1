@@ -52,21 +52,21 @@ type Coder struct {
 	isCanonical bool
 }
 
-// appendUint added unsigned integer 64 with number
+// appendUint appends unsigned integer 64 with number
 // bits in it
 func (e *Coder) appendUint64(v uint64, n uint8) error {
 	if n > 64 {
 		return errors.New("Number of bits greater than 64")
 	}
 
-	v <<= uint64(64-n)
+	v <<= uint64(64 - n)
 	shift := (8 - e.offset)
 	if shift == 8 {
 		e.buf = e.buf[:len(e.buf)-1]
 		shift = 0
 	}
 
-	if  0 < e.offset && e.offset < 8 {
+	if 0 < e.offset && e.offset < 8 {
 		k := v >> (56 + e.offset)
 		e.buf[len(e.buf)-1] |= byte(k)
 		v <<= shift
@@ -77,7 +77,7 @@ func (e *Coder) appendUint64(v uint64, n uint8) error {
 
 	k := int(n) - int(shift)
 	l := k / 8
-	switch  {
+	switch {
 	case k <= 0:
 		if len(e.buf) == 1 && e.offset == 0 {
 			e.buf = append(e.buf, buf[0])
@@ -85,16 +85,16 @@ func (e *Coder) appendUint64(v uint64, n uint8) error {
 			return nil
 		}
 		e.offset += n
-		
+
 	case k > 8:
 		e.offset = uint8(k % 8)
 		if e.offset == 0 {
 			e.offset = 8
 		} else {
-			l ++
+			l++
 		}
 	case k < 8:
-		e.offset = uint8(k) 
+		e.offset = uint8(k)
 		l = 1
 	}
 	e.buf = append(e.buf, buf[:l]...)
@@ -130,7 +130,9 @@ func (e *Coder) appendUint64Bytes(value uint64) int {
 	return int(l * 8)
 }
 
-func (e *Coder) appendConstrainedUint64(value, min, max int64) int {
+// appendConstrainedInt64 appends whole number to the byte
+// buffer. ASN1 Type: NUMBER(min..max)
+func (e *Coder) appendConstrainedInt64(value, min, max int64) int {
 	rng := (max - min + 1)
 	value -= min
 	l := bits.Len64(uint64(rng))
@@ -164,10 +166,32 @@ func (e *Coder) appendConstrainedUint64(value, min, max int64) int {
 	return l
 }
 
+// appendUnconstrinedInt64 appends unconstrined number
+// to the buffer
+func (e *Coder) appendUnconstrainedInt64(value int64) int {
+	l := bits.Len64(uint64(value))
+	nBytes := (l + 7) / 8
+
+	switch {
+	case value < 0:
+		value = 1 << ((8 * nBytes) + value)
+	case value > 0:
+		if l == (8 * nBytes) {
+			nBytes++
+		}
+	default:
+		nBytes = 1
+	}
+	e.appendLenDeterminant(l)
+	e.appendUint64(value, nBytes*8)
+	return 1
+}
+
 // BitLen returns encoded length in bits
 func (e Coder) BitLen() int {
-	return (len(e.buf)-1) * 8 + int(e.offset)
+	return (len(e.buf)-1)*8 + int(e.offset)
 }
+
 // addBool adds boolean value to the single bit
 func (e *Coder) addBool(v bool) int {
 	if v {
