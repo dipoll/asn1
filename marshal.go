@@ -174,7 +174,7 @@ func (e *Coder) appendUnconstrainedInt64(value int64) int {
 
 	switch {
 	case value < 0:
-		value = 1 << ((8 * nBytes) + value)
+		value = 1 << int64((8 * nBytes)) + value
 	case value > 0:
 		if l == (8 * nBytes) {
 			nBytes++
@@ -182,8 +182,8 @@ func (e *Coder) appendUnconstrainedInt64(value int64) int {
 	default:
 		nBytes = 1
 	}
-	e.appendLenDeterminant(l)
-	e.appendUint64(value, nBytes*8)
+	e.appendLenDeterminant(uint64(l))
+	e.appendUint64(uint64(value), uint8(nBytes*8))
 	return 1
 }
 

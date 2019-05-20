@@ -18,6 +18,12 @@ type tBoolNum struct {
 	bytes    []byte
 }
 
+type tUnConstNum struct {
+	isA     bool
+	Integer []uint64
+	Bytes   []byte
+}
+
 var tbBoolNum = []tBoolNum{
 	tBoolNum{true, true, 2, []byte{0x80, 0x01, 0x02}},
 	tBoolNum{false, true, 2, []byte{0x80, 0x81, 0x00}}}
@@ -82,6 +88,30 @@ func TestConstrainedIntEncode(t *testing.T) {
 		if !equal(ue.buf, v.RefU) || ue.BitLen() != v.UL {
 			t.Errorf("%d: UPER Constrained INTEGER(%d..%d): \nWant %08b \nGot  %08b\n\tLength Encodeod: %d(MUSTBE: %d)\n",
 				i, v.Min, v.Max, v.RefU, ue.buf, ue.BitLen(), v.UL)
+		}
+	}
+}
+
+var tableUnConstInt = []struct {
+	V    []int64
+	Ref  []byte
+	RefU []byte
+}{
+	{[]int64{234}, []byte{0x02, 0x00, 0xEA}, []byte{0x02, 0x00, 0xEA}},
+	{[]int64{-67}, []byte{0x01, 0xBD}, []byte{0x01, 0xBD}},
+	{[]int64{17, 256, 18976}, []byte{0x01, 0x11, 0x02, 0x01, 0x00, 0x02, 0x4A, 0x20}, []byte{0x01, 0x11, 0x02, 0x01, 0x00, 0x02, 0x4A, 0x20}}}
+
+func TestUnConstrinedIntEncode(t *testing.T) {
+	for i, v := range tableUnConstInt {
+		e := Coder{buf: []byte{0}, isAligned: true}
+		ue := Coder{buf: []byte{0}, isAligned: false}
+		for _, num := range v.V {
+			e.appendUnconstrainedInt64(num)
+			ue.appendUnconstrainedInt64(num)
+		}
+		if !equal(e.buf, v.Ref) {
+			t.Errorf("%d: APER Unconstrained Want %08b \nGot  %08b\n",
+				i, v.RefU, e.buf)
 		}
 	}
 }
