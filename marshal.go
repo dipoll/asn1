@@ -106,6 +106,7 @@ func (e *Coder) appendLenDeterminant(length uint64) (encoded uint64, nlength uin
 	case length < 128:
 		encoded = length
 	case length < 16384:
+		fmt.Println("Less than 16384")
 		encoded = length&0xFF | uint64(byte(0x80)|byte(length>>8))<<8
 	case length < 32768:
 		encoded = 0xC1
@@ -121,6 +122,13 @@ func (e *Coder) appendLenDeterminant(length uint64) (encoded uint64, nlength uin
 		nlength = 65536
 
 	}
+	if e.offset == 0 && len(e.buf) > 0 {
+		e.buf[len(e.buf)-1] = byte(encoded)
+	} else {
+		e.buf = append(e.buf, byte(encoded))
+	}
+	e.offset = 8
+
 	return
 }
 
@@ -171,10 +179,16 @@ func (e *Coder) appendConstrainedInt64(value, min, max int64) int {
 func (e *Coder) appendUnconstrainedInt64(value int64) int {
 	l := bits.Len64(uint64(value))
 	nBytes := (l + 7) / 8
-
 	switch {
 	case value < 0:
-		value = 1 << int64((8 * nBytes)) + value
+		l = bits.Len64(uint64(^value+1))
+		nBytes = (l + 7) / 8
+		value = (1 << ((8*nBytes))) + value
+		
+		if (value & (1 << (8*nBytes - 1))) == 0 {
+			value |= (0xff << ((8 * nBytes)))
+			nBytes++
+		}
 	case value > 0:
 		if l == (8 * nBytes) {
 			nBytes++
@@ -182,7 +196,7 @@ func (e *Coder) appendUnconstrainedInt64(value int64) int {
 	default:
 		nBytes = 1
 	}
-	e.appendLenDeterminant(uint64(l))
+	e.appendLenDeterminant(uint64(nBytes))
 	e.appendUint64(uint64(value), uint8(nBytes*8))
 	return 1
 }

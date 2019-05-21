@@ -113,6 +113,10 @@ func TestUnConstrinedIntEncode(t *testing.T) {
 			t.Errorf("%d: APER Unconstrained Want %08b \nGot  %08b\n",
 				i, v.RefU, e.buf)
 		}
+		if !equal(ue.buf, v.RefU) {
+			t.Errorf("%d: UPER Unconstrained Want %08b \nGot  %08b\n",
+				i, v.RefU, ue.buf)
+		}
 	}
 }
 
