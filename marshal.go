@@ -106,7 +106,6 @@ func (e *Coder) appendLenDeterminant(length uint64) (encoded uint64, nlength uin
 	case length < 128:
 		encoded = length
 	case length < 16384:
-		fmt.Println("Less than 16384")
 		encoded = length&0xFF | uint64(byte(0x80)|byte(length>>8))<<8
 	case length < 32768:
 		encoded = 0xC1
@@ -217,6 +216,22 @@ func (e *Coder) addBool(v bool) int {
 	return 1
 }
 
+
+//appendUTF8String adds utf8 string to the byte buffer
+func (e *Coder) appendUTF8String(s string) int {
+	if e.offset == 0 && len(e.buf) > 0 {
+		e.buf = e.buf[:len(e.buf)-1]
+	}
+	bs := []byte(s)
+	nBytes := len(bs)
+	e.appendLenDeterminant(uint64(nBytes))
+	e.buf = append(e.buf, bs...)
+	e.offset = 8
+	return nBytes * 8
+}
+
+// appendBit adds 0 or 1 value to the free 
+// left bit
 func (e *Coder) appendBit(b byte) int {
 	if e.offset > 7 || len(e.buf) < 1 {
 		e.buf = append(e.buf, byte(0))
