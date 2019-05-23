@@ -1,6 +1,7 @@
 package asn1per
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -131,6 +132,39 @@ var tableUTF8String = []struct {
 		0x68, 0x65, 0x72, 0x02, 0x67, 0x6F, 0x80, 0x06,
 		0xE4, 0xB8, 0x96, 0xE7, 0x95, 0x8C}, []byte{0x06, 0x67, 0x6F, 0x70,
 		0x68, 0x65, 0x72, 0x02, 0x67, 0x6F, 0x83, 0x72, 0x5C, 0x4B, 0x73, 0xCA, 0xC6, 0x00}}}
+
+func TestUTF8StringEncoding(t *testing.T) {
+	for i, v := range tableUTF8String {
+		e := Coder{buf: []byte{0}, isAligned: true}
+		ue := Coder{buf: []byte{0}, isAligned: false}
+		e.appendUTF8String(v.s1)
+		fmt.Printf("s1: %08b\n", e.buf)
+		e.appendUTF8String(v.s2)
+		fmt.Printf("s2: %08b\n", e.buf)
+		e.addBool(v.b)
+		fmt.Printf("b : %08b\n", e.buf)
+		e.appendUTF8String(v.s3)
+		fmt.Printf("s3 : %08b\n", e.buf)
+
+		ue.appendUTF8String(v.s1)
+		fmt.Printf("s1: %08b\n", ue.buf)
+		ue.appendUTF8String(v.s2)
+		fmt.Printf("s2: %08b\n", ue.buf)
+		ue.addBool(v.b)
+		fmt.Printf("b : %08b\n", ue.buf)
+		ue.appendUTF8String(v.s3)
+		fmt.Printf("s3 : %08b\n", ue.buf)
+
+		if !equal(e.buf, v.Ref) {
+			t.Errorf("[%d]APER: Expect: %08b, Got: %08b\n", i, v.Ref, e.buf)
+		}
+
+		if !equal(ue.buf, v.RefU) {
+			t.Errorf("[%d]UPER: Expect: \n%08b\n, Got: \n%08b\n", i, v.RefU, ue.buf)
+		}
+
+	}
+}
 
 func BenchmarkConstrainedIntEncodeA(b *testing.B) {
 	for i := 0; i < b.N; i++ {

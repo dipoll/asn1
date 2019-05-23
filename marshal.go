@@ -121,6 +121,7 @@ func (e *Coder) appendLenDeterminant(length uint64) (encoded uint64, nlength uin
 		nlength = 65536
 
 	}
+	
 	if e.offset == 0 && len(e.buf) > 0 {
 		e.buf[len(e.buf)-1] = byte(encoded)
 	} else {
@@ -224,9 +225,11 @@ func (e *Coder) appendUTF8String(s string) int {
 	}
 	bs := []byte(s)
 	nBytes := len(bs)
+	if e.isAligned {
+		e.offset = 8
+	}
 	e.appendLenDeterminant(uint64(nBytes))
 	e.buf = append(e.buf, bs...)
-	e.offset = 8
 	return nBytes * 8
 }
 
