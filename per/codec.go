@@ -100,13 +100,35 @@ func (e *BitEncoder) Reset() {
 	e.bits = 0
 }
 
+// EncodeLength get encoded tag and length in chanks
+// if length is greater than the biggest chunk remainin
+// part of the length is returned
+func EncodeLength(length int) (det []byte, remain int) {
+	remain = 0
+	switch {
+	case length < 128:
+		det = []byte{byte(length)}
+	case length < 16384:
+		num := uint16(length&0xFF | int(byte(0x80)|byte(length>>8))<<8)
+		det = []byte{byte(num >> 8), byte((num << 8) >> 8)}
+	case length < 32768:
+		num := uint64(0xC1<<61) | uint64(length)
+		det = []byte{byte(num >> 56),
+			byte(num >> 48),
+			byte(num >> 40),
+			byte(num >> 32),
+			byte(num >> 16),
+			byte(num >> 8), byte(num)}
+	}
+	return
+}
 
 // ReadBit reads one bit at position pos
-// returns 0 or 1 and no error in case of 
-// successful reading. In case of error returns 
+// returns 0 or 1 and no error in case of
+// successful reading. In case of error returns
 // -1 and error
 func ReadBit(pos int, s []byte) (int, error) {
-	b,_,err := ReadBits(pos,1,s)
+	b, _, err := ReadBits(pos, 1, s)
 	if err == nil && b.Int64() > -1 {
 		return int(b.Int64()), nil
 	}

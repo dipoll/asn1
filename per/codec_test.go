@@ -2,6 +2,20 @@ package per
 
 import "testing"
 
+// equal is helper function to compare byte
+// slices
+func equal(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func TestEncoderInt(t *testing.T) {
 
 }
@@ -61,6 +75,25 @@ func TestReadBit(t *testing.T) {
 		if b != v.v {
 			t.Errorf("TestReadBit [%d]: Expect: %d Got: %d\n", n, v.v, b)
 			t.Errorf("TestReadBit [%d]: Dump\n Data-->%08b\n Got--->%08b\n", n, v.b, b)
+		}
+	}
+}
+
+var lenDetT = []struct {
+	length int
+	det    []byte
+	remain int
+}{
+	{140, []byte{0x80, 0x8c}, 0},
+	{67, []byte{0x43}, 0},
+	{32000 , []byte{0x30,0x82,0x7D,0x04,0x80,0x82,0x7D,0x00}, 0}}
+
+func TestEncodeLength(t *testing.T) {
+	for n, v := range lenDetT {
+		det, remain := EncodeLength(v.length)
+		if !equal(det, v.det) || remain != v.remain {
+			t.Errorf("TestEncodeLength [%d]: Expect Det: %08b Rem: %d, Got Det: %08b Rem: %d\n",
+				n, v.det, v.remain, det, remain)
 		}
 	}
 }
