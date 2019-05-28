@@ -5,20 +5,20 @@ import (
 	"math/big"
 )
 
-// PERCodec implements basic operations needed to encode
+// BitEncoder implements basic operations needed to encode
 // message in PER format
-type PERCodec struct {
+type BitEncoder struct {
 	bits uint
 	buf  *big.Int
 }
 
-// NewPERCodec returns initialized new encoder
-func NewPERCodec() *PERCodec {
-	return &PERCodec{buf: big.NewInt(0)}
+// NewBitEncoder returns initialized new encoder
+func NewBitEncoder() *BitEncoder {
+	return &BitEncoder{buf: big.NewInt(0)}
 }
 
 // AppendBit appends bits to the left
-func (e *PERCodec) AppendBit(b uint) int {
+func (e *BitEncoder) AppendBit(b uint) int {
 	nbytes, nbits := e.FullLen()
 	if nbits > 0 {
 		nbytes++
@@ -33,12 +33,12 @@ func (e *PERCodec) AppendBit(b uint) int {
 }
 
 // BitLen returns current length in bits
-func (e *PERCodec) BitLen() uint {
+func (e *BitEncoder) BitLen() uint {
 	return e.bits
 }
 
 // Len returns current length in bytes to be written
-func (e *PERCodec) Len() uint {
+func (e *BitEncoder) Len() uint {
 	nbytes, nbits := e.FullLen()
 	if nbits > 0 {
 		nbytes++
@@ -48,27 +48,27 @@ func (e *PERCodec) Len() uint {
 
 // FullLen returns number of fully occupied bytes and number of occupied
 // bits in the latest(right) byte
-func (e *PERCodec) FullLen() (uint, uint) {
+func (e *BitEncoder) FullLen() (uint, uint) {
 	bytes := e.bits / 8
 	trail := e.bits % 8
 	return bytes, trail
 }
 
 // Bytes returns encoded bytes
-func (e *PERCodec) Bytes() []byte {
+func (e *BitEncoder) Bytes() []byte {
 	return e.buf.Bytes()
 }
 
 // Align aligns bits to bytes, so the next
 // encoded type will be padded to the next byte
-func (e *PERCodec) Align() {
+func (e *BitEncoder) Align() {
 	e.bits = e.Len() * 8
 	e.buf = e.buf.Lsh(e.buf, 8)
 }
 
 // AppendInteger appends integer of defined bit length
 // to the number
-func (e *PERCodec) AppendInt(num *big.Int, nBits uint) int {
+func (e *BitEncoder) AppendInt(num *big.Int, nBits uint) int {
 	_, b := e.FullLen()
 	shift := int(8-b) - int((nBits % 8))
 	switch {
@@ -89,13 +89,13 @@ func (e *PERCodec) AppendInt(num *big.Int, nBits uint) int {
 }
 
 // AppendBytes appends pure bytes to the end of buffer
-func (e *PERCodec) AppendBytes(b []byte) int {
+func (e *BitEncoder) AppendBytes(b []byte) int {
 	return e.AppendInt(big.NewInt(0).SetBytes(b), uint(len(b)*8))
 }
 
 // Reset clears encoder's buffer and bit counter. Should
 // be called after each message has been encoded/decoded
-func (e *PERCodec) Reset() {
+func (e *BitEncoder) Reset() {
 	e.buf = big.NewInt(0)
 	e.bits = 0
 }
