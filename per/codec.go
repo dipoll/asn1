@@ -5,6 +5,13 @@ import (
 	"math/big"
 )
 
+const (
+	chunk16K = 1024 * 16
+	chunk32K = chunk16K * 2
+	chunk48K = chunk16K * 3
+	chunk64K = chunk16K * 4
+)
+
 // BitEncoder implements basic operations needed to encode
 // message in PER format
 type BitEncoder struct {
@@ -68,9 +75,9 @@ func (e *BitEncoder) Align() {
 
 // AppendInteger appends integer of defined bit length
 // to the number
-func (e *BitEncoder) AppendInt(num *big.Int, nBits uint) int {
+func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 	_, b := e.FullLen()
-	shift := int(8-b) - int((nBits % 8))
+	shift := int(8-b) - (nBits % 8)
 	switch {
 	case shift > 0:
 		num = num.Lsh(num, uint(shift))
@@ -78,19 +85,19 @@ func (e *BitEncoder) AppendInt(num *big.Int, nBits uint) int {
 		num = num.Lsh(num, 8)
 		num = num.Rsh(num, uint(-1*shift))
 	}
-	pShift := (nBits - (8 - b) + 7) / 8
+	pShift := (nBits - int(8-b) + 7) / 8
 	if pShift > 0 {
-		e.buf = e.buf.Lsh(e.buf, pShift*8)
+		e.buf = e.buf.Lsh(e.buf, uint(pShift*8))
 	}
 
 	e.buf = e.buf.Add(e.buf, num)
-	e.bits += nBits
-	return int(nBits)
+	e.bits += uint(nBits)
+	return nBits
 }
 
 // AppendBytes appends pure bytes to the end of buffer
 func (e *BitEncoder) AppendBytes(b []byte) int {
-	return e.AppendInt(big.NewInt(0).SetBytes(b), uint(len(b)*8))
+	return e.AppendInt(big.NewInt(0).SetBytes(b), len(b)*8)
 }
 
 // Reset clears encoder's buffer and bit counter. Should
@@ -100,26 +107,63 @@ func (e *BitEncoder) Reset() {
 	e.bits = 0
 }
 
-// EncodeLength get encoded tag and length in chanks
-// if length is greater than the biggest chunk remainin
-// part of the length is returned
-func EncodeLength(length int) (det []byte, remain int) {
-	remain = 0
+// AppendConstInt appends constrained integer to the byte buffer.
+func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) int {
+	rng := max - min + 1
+	value = value.Add(value, big.NewInt(int64(min)))
+
+	if rng > 255 {
+		e.Align()
+	}
+
+	switch {
+	case rng < 256:
+		return e.AppendInt(value, value.BitLen())
+
+	case rng == 256:
+		return e.AppendInt(value, 8)
+
+	case rng <= 65536:
+		return e.AppendInt(value, 16)
+
+	default:
+		return e.AppendInt(value, value.BitLen())
+	}
+}
+
+// LengthDet returns determinant encdoed as slice of
+// bytes and consumed length by chunk. In the case if
+// length could not be encoded into one chunk of
+// data this function should be invoked until
+// consumed == length
+func LengthDet(length int) (det []byte, consumed int) {
 	switch {
 	case length < 128:
 		det = []byte{byte(length)}
-	case length < 16384:
+		consumed = length
+
+	case length < chunk16K:
 		num := uint16(length&0xFF | int(byte(0x80)|byte(length>>8))<<8)
 		det = []byte{byte(num >> 8), byte((num << 8) >> 8)}
-	case length < 32768:
-		num := uint64(0xC1<<61) | uint64(length)
-		det = []byte{byte(num >> 56),
-			byte(num >> 48),
-			byte(num >> 40),
-			byte(num >> 32),
-			byte(num >> 16),
-			byte(num >> 8), byte(num)}
+		consumed = length
+
+	case length < chunk32K:
+		det = []byte{0xC1}
+		consumed = chunk16K
+
+	case length < chunk48K:
+		det = []byte{0xC2}
+		consumed = chunk16K
+
+	case length < chunk64K:
+		det = []byte{0xC3}
+		consumed = chunk48K
+
+	default:
+		det = []byte{0xC4}
+		consumed = chunk64K
 	}
+
 	return
 }
 
@@ -152,17 +196,56 @@ func ReadBits(pos int, length int, s []byte) (*big.Int, int, error) {
 			data = data << startBit
 			data = data >> startBit
 		}
-		chank := 8 - startBit
-		if chank >= length {
-			chank = length
+		chunk := 8 - startBit
+		if chunk >= length {
+			chunk = length
 		}
-		out = out.Lsh(out, uint(chank))
-		out = out.Add(out, big.NewInt(int64(data>>(8-(startBit+chank)))))
-		length -= chank
+		out = out.Lsh(out, uint(chunk))
+		out = out.Add(out, big.NewInt(int64(data>>(8-(startBit+chunk)))))
+		length -= chunk
 		startBit = 0
 	}
 	if length > 0 {
 		return out, length, errors.New("PER: Partial read, not enough bytes")
 	}
 	return out, length, nil
+}
+
+// ReadLenDet reads length determinant and returns
+// chunk of data that needs to be read
+func ReadLenDet(pos int, s []byte) (readBits, chunkSize int, err error) {
+	det, readBits, err := ReadBits(pos, 16, s)
+	if err != nil {
+		return
+	}
+
+	bts := det.Bytes()
+	readBits = 8
+
+	switch {
+	case (bts[0] & 0x80) == 0x00:
+		chunkSize = int(bts[0])
+		
+	case (bts[0] & 0xC0) == 0x80:
+		readBits = 16
+		chunkSize = (int(bts[0]&0x7F) << 8) | int(bts[1])
+		
+	case bts[0] == 0xC1:
+		chunkSize = chunk16K
+		
+	case bts[0] == 0xC2:
+		chunkSize = chunk32K
+		
+	case bts[0] == 0xC3:
+		chunkSize = chunk48K
+		
+	case bts[0] == 0xC4:
+		chunkSize = chunk64K
+		
+	default:
+		err = errors.New("PER: ReadLenDet: Can't read length determinant")
+
+	}
+
+	return
 }

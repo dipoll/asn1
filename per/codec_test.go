@@ -80,20 +80,20 @@ func TestReadBit(t *testing.T) {
 }
 
 var lenDetT = []struct {
-	length int
-	det    []byte
-	remain int
+	length   int
+	det      []byte
+	consumed int
 }{
-	{140, []byte{0x80, 0x8c}, 0},
-	{67, []byte{0x43}, 0},
-	{32000 , []byte{0x30,0x82,0x7D,0x04,0x80,0x82,0x7D,0x00}, 0}}
+	{140, []byte{0x80, 0x8c}, 140},
+	{67, []byte{0x43}, 67},
+	{32000, []byte{0xC1}, 16384}}
 
-func TestEncodeLength(t *testing.T) {
+func TestLengthDet(t *testing.T) {
 	for n, v := range lenDetT {
-		det, remain := EncodeLength(v.length)
-		if !equal(det, v.det) || remain != v.remain {
+		det, consumed := LengthDet(v.length)
+		if !equal(det, v.det) || consumed != v.consumed {
 			t.Errorf("TestEncodeLength [%d]: Expect Det: %08b Rem: %d, Got Det: %08b Rem: %d\n",
-				n, v.det, v.remain, det, remain)
+				n, v.det, v.consumed, det, consumed)
 		}
 	}
 }
