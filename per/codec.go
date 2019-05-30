@@ -206,13 +206,13 @@ func ReadBits(pos int, length int, s []byte) (*big.Int, int, error) {
 		startBit = 0
 	}
 	if length > 0 {
-		return out, length, errors.New("PER: Partial read, not enough bytes")
+		return out, length, errors.New("per: codec: partial read, not enough bytes")
 	}
 	return out, length, nil
 }
 
 // ReadLenDet reads length determinant and returns
-// chunk of data that needs to be read
+// read bits consumed by length determinant and size of data chunk to be read in bytes
 func ReadLenDet(pos int, s []byte) (readBits, chunkSize int, err error) {
 	det, readBits, err := ReadBits(pos, 16, s)
 	if err != nil {
@@ -225,25 +225,26 @@ func ReadLenDet(pos int, s []byte) (readBits, chunkSize int, err error) {
 	switch {
 	case (bts[0] & 0x80) == 0x00:
 		chunkSize = int(bts[0])
-		
+
 	case (bts[0] & 0xC0) == 0x80:
 		readBits = 16
 		chunkSize = (int(bts[0]&0x7F) << 8) | int(bts[1])
-		
+
 	case bts[0] == 0xC1:
 		chunkSize = chunk16K
-		
+
 	case bts[0] == 0xC2:
 		chunkSize = chunk32K
-		
+
 	case bts[0] == 0xC3:
 		chunkSize = chunk48K
-		
+
 	case bts[0] == 0xC4:
 		chunkSize = chunk64K
-		
+
 	default:
-		err = errors.New("PER: ReadLenDet: Can't read length determinant")
+
+		err = errors.New("per: ReadLenDet: can't read length determinant")
 
 	}
 

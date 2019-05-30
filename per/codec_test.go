@@ -97,3 +97,32 @@ func TestLengthDet(t *testing.T) {
 		}
 	}
 }
+
+var readLenDetT = []struct{
+	data	[]byte
+	bRead	int
+	length	int
+	err		bool
+}{
+	{[]byte{0x80,0xFE,0x61,0x61}, 2*8, 254, false},
+	{[]byte{0x81, 0x00, 0x61}, 2*8, 256, false},
+	{[]byte{0x78,0x61}, 1*8, 120, false},
+	{[]byte{0x80,0x80,0x61}, 2*8, 128, false},
+	{[]byte{0xC4,0x61}, 1*8, 65536, false},
+	{[]byte{0xC3,0x61}, 1*8, 49152, false},
+	{[]byte{0x80}, 0, 0, true}}
+
+func TestReadLenDet(t *testing.T){
+	for n, v := range readLenDetT {
+		rB, cS, err := ReadLenDet(0, v.data)
+		if err == nil && v.err  {
+			t.Errorf("TestReadLenDet [%d]: Should return error!", n)
+			continue
+		} else if err != nil && v.err {
+			continue
+		}
+		if rB != v.bRead || cS != v.length {
+			t.Errorf("TestReadLenDet [%d]: Decode: want: %d, got: %d", n, v.length, cS)
+		}
+	}
+}
