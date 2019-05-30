@@ -131,6 +131,19 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 	}
 }
 
+// AppendUnconstInt appends unconstrained signed integer
+// to the byte buffer
+func (e *BitEncoder) AppendUnsconstInt() int {
+	return 0
+}
+
+
+// AppendLenDet appends length determinant to the bytes 
+// to the internal buffer
+func (e *BitEncoder) AppendLenDet(v *big.Int, length int) (nBits int, err error) {
+	return
+}
+
 // LengthDet returns determinant encdoed as slice of
 // bytes and consumed length by chunk. In the case if
 // length could not be encoded into one chunk of
