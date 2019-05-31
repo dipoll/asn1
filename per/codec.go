@@ -2,6 +2,7 @@ package per
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 )
 
@@ -133,12 +134,11 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 
 // AppendUnconstInt appends unconstrained signed integer
 // to the byte buffer
-func (e *BitEncoder) AppendUnsconstInt() int {
+func (e *BitEncoder) AppendUnsconstInt(v *big.Int) int {
 	return 0
 }
 
-
-// AppendLenDet appends length determinant to the bytes 
+// AppendLenDet appends length determinant to the bytes
 // to the internal buffer
 func (e *BitEncoder) AppendLenDet(v *big.Int, length int) (nBits int, err error) {
 	return
@@ -190,6 +190,27 @@ func ReadBit(pos int, s []byte) (int, error) {
 		return int(b.Int64()), nil
 	}
 	return -1, err
+}
+
+// ToNegative converts big.Int to negative
+// representation for PER encoding
+func ToNegative(v *big.Int) *big.Int {
+	v = v.Xor(v, v)
+	v = v.Add(v, big.NewInt(1))
+	l := (v.BitLen() + 7) / 8
+	fmt.Printf("Int before sum: %08b with Length: %d\n", v.Bytes(), l)
+	sh := big.NewInt(1).Lsh(big.NewInt(1),uint(l*8))
+	fmt.Printf("Shifted: %08b\n", sh.Bytes())
+	v = v.Add(v, sh)
+	fmt.Printf("Int after sum: %08b with Length: %d\n", v.Bytes(), (v.BitLen() + 7) / 8)
+	z := v.And(v, big.NewInt(int64(1<<((8*l)-1))))
+	if z.Cmp(big.NewInt(0)) == 0 {
+		fmt.Printf("Before add %08b\n", z.Bytes())
+		v = v.Or(v, big.NewInt(0xff<<(8*l)))
+		l++
+	}
+	fmt.Printf("%08b\n", v)
+	return v
 }
 
 // ReadBits reads big.Int number from the byte slice

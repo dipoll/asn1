@@ -1,6 +1,9 @@
 package per
 
-import "testing"
+import (
+	"math/big"
+	"testing"
+)
 
 // equal is helper function to compare byte
 // slices
@@ -98,24 +101,24 @@ func TestLengthDet(t *testing.T) {
 	}
 }
 
-var readLenDetT = []struct{
-	data	[]byte
-	bRead	int
-	length	int
-	err		bool
+var readLenDetT = []struct {
+	data   []byte
+	bRead  int
+	length int
+	err    bool
 }{
-	{[]byte{0x80,0xFE,0x61,0x61}, 2*8, 254, false},
-	{[]byte{0x81, 0x00, 0x61}, 2*8, 256, false},
-	{[]byte{0x78,0x61}, 1*8, 120, false},
-	{[]byte{0x80,0x80,0x61}, 2*8, 128, false},
-	{[]byte{0xC4,0x61}, 1*8, 65536, false},
-	{[]byte{0xC3,0x61}, 1*8, 49152, false},
+	{[]byte{0x80, 0xFE, 0x61, 0x61}, 2 * 8, 254, false},
+	{[]byte{0x81, 0x00, 0x61}, 2 * 8, 256, false},
+	{[]byte{0x78, 0x61}, 1 * 8, 120, false},
+	{[]byte{0x80, 0x80, 0x61}, 2 * 8, 128, false},
+	{[]byte{0xC4, 0x61}, 1 * 8, 65536, false},
+	{[]byte{0xC3, 0x61}, 1 * 8, 49152, false},
 	{[]byte{0x80}, 0, 0, true}}
 
-func TestReadLenDet(t *testing.T){
+func TestReadLenDet(t *testing.T) {
 	for n, v := range readLenDetT {
 		rB, cS, err := ReadLenDet(0, v.data)
-		if err == nil && v.err  {
+		if err == nil && v.err {
 			t.Errorf("TestReadLenDet [%d]: Should return error!", n)
 			continue
 		} else if err != nil && v.err {
@@ -123,6 +126,22 @@ func TestReadLenDet(t *testing.T){
 		}
 		if rB != v.bRead || cS != v.length {
 			t.Errorf("TestReadLenDet [%d]: Decode: want: %d, got: %d", n, v.length, cS)
+		}
+	}
+}
+
+var toNegT = []struct {
+	data   []byte
+	number *big.Int
+}{
+	{[]byte{0xFD}, big.NewInt(-3)},
+	{[]byte{0xFF,0x7F}, big.NewInt(-129)}}
+
+func TestToNegative(t *testing.T) {
+	for n, v := range toNegT {
+		vl := ToNegative(v.number)
+		if !equal(v.data, vl.Bytes()) {
+			t.Errorf("per: codec: ToNegative [%d]: expect: %08b, got: %08b\n", n, v.data, vl.Bytes())
 		}
 	}
 }
