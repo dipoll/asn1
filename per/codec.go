@@ -2,7 +2,6 @@ package per
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 )
 
@@ -192,24 +191,24 @@ func ReadBit(pos int, s []byte) (int, error) {
 	return -1, err
 }
 
-// ToNegative converts big.Int to negative
-// representation for PER encoding
+// ToNegative converts big.Int to 2's complimentary negative
+// representation for further encoding
 func ToNegative(v *big.Int) *big.Int {
-	v = v.Xor(v, v)
+
+	v = v.Abs(v).Not(v)
 	v = v.Add(v, big.NewInt(1))
 	l := (v.BitLen() + 7) / 8
-	fmt.Printf("Int before sum: %08b with Length: %d\n", v.Bytes(), l)
-	sh := big.NewInt(1).Lsh(big.NewInt(1),uint(l*8))
-	fmt.Printf("Shifted: %08b\n", sh.Bytes())
+
+	sh := big.NewInt(1).Lsh(big.NewInt(1), uint(l*8))
 	v = v.Add(v, sh)
-	fmt.Printf("Int after sum: %08b with Length: %d\n", v.Bytes(), (v.BitLen() + 7) / 8)
-	z := v.And(v, big.NewInt(int64(1<<((8*l)-1))))
+
+	z := big.NewInt(0).And(v, big.NewInt(int64(1<<((8*l)-1))))
+
 	if z.Cmp(big.NewInt(0)) == 0 {
-		fmt.Printf("Before add %08b\n", z.Bytes())
 		v = v.Or(v, big.NewInt(0xff<<(8*l)))
 		l++
 	}
-	fmt.Printf("%08b\n", v)
+
 	return v
 }
 
