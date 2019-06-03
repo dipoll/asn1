@@ -139,9 +139,28 @@ var toNegT = []struct {
 
 func TestToNegative(t *testing.T) {
 	for n, v := range toNegT {
-		vl := ToNegative(v.number)
+		vl, _ := ToNegative(v.number)
 		if !equal(v.data, vl.Bytes()) {
 			t.Errorf("per: codec: ToNegative [%d]: expect: %08b, got: %08b\n", n, v.data, vl.Bytes())
+		}
+	}
+}
+
+
+var unconstIntT = []struct {
+	data   []byte
+	number *big.Int
+}{
+	{[]byte{0xFD}, big.NewInt(-3)},
+	{[]byte{0xFF,0x7F}, big.NewInt(-129)}}
+	
+func TestUnconstInt(t *testing.T) {
+	for n, v := range unconstIntT {
+		enc := NewBitEncoder()
+		enc.AppendUnsconstInt(v.number)
+		
+		if !equal(v.data, enc.Bytes()) {
+			t.Errorf("per: codec: EncodeUnconstrainedInt [%d]: expect: %08b, got: %08b\n", n, v.data, enc.Bytes())
 		}
 	}
 }

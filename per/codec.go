@@ -134,13 +134,24 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 // AppendUnconstInt appends unconstrained signed integer
 // to the byte buffer
 func (e *BitEncoder) AppendUnsconstInt(v *big.Int) int {
-	return 0
+	length := v.BitLen()
+	if v.Sign() < 0 {
+		v, length = ToNegative(v)
+	}
+	e.AppendWithLenDet(v.Bytes(), length)
+	return length * 8
 }
 
 // AppendLenDet appends length determinant to the bytes
 // to the internal buffer
-func (e *BitEncoder) AppendLenDet(v *big.Int, length int) (nBits int, err error) {
-	return
+func (e *BitEncoder) AppendWithLenDet(v []byte, length int) (nBits int, err error) {
+	for i := 0; i < length; {
+		det, consBytes := LengthDet(length - i)
+		e.AppendBytes(det)
+		e.AppendBytes(v[i:i+(consBytes)])
+		i += consBytes
+	}
+	return length, nil
 }
 
 // LengthDet returns determinant encdoed as slice of
@@ -193,7 +204,7 @@ func ReadBit(pos int, s []byte) (int, error) {
 
 // ToNegative converts big.Int to 2's complimentary negative
 // representation for further encoding
-func ToNegative(v *big.Int) *big.Int {
+func ToNegative(v *big.Int) (*big.Int, int) {
 
 	v = v.Abs(v).Not(v)
 	v = v.Add(v, big.NewInt(1))
@@ -209,7 +220,7 @@ func ToNegative(v *big.Int) *big.Int {
 		l++
 	}
 
-	return v
+	return v, l
 }
 
 // ReadBits reads big.Int number from the byte slice
