@@ -135,7 +135,7 @@ var toNegT = []struct {
 	number *big.Int
 }{
 	{[]byte{0xFD}, big.NewInt(-3)},
-	{[]byte{0xFF,0x7F}, big.NewInt(-129)}}
+	{[]byte{0xFF, 0x7F}, big.NewInt(-129)}}
 
 func TestToNegative(t *testing.T) {
 	for n, v := range toNegT {
@@ -146,19 +146,18 @@ func TestToNegative(t *testing.T) {
 	}
 }
 
-
 var unconstIntT = []struct {
 	data   []byte
 	number *big.Int
 }{
-	{[]byte{0xFD}, big.NewInt(-3)},
-	{[]byte{0xFF,0x7F}, big.NewInt(-129)}}
-	
+	{[]byte{0x01, 0xFD}, big.NewInt(-3)},
+	{[]byte{0x02, 0xFF, 0x7F}, big.NewInt(-129)}}
+
 func TestUnconstInt(t *testing.T) {
 	for n, v := range unconstIntT {
 		enc := NewBitEncoder()
 		enc.AppendUnsconstInt(v.number)
-		
+
 		if !equal(v.data, enc.Bytes()) {
 			t.Errorf("per: codec: EncodeUnconstrainedInt [%d]: expect: %08b, got: %08b\n", n, v.data, enc.Bytes())
 		}

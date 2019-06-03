@@ -2,6 +2,7 @@ package per
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 )
 
@@ -138,7 +139,10 @@ func (e *BitEncoder) AppendUnsconstInt(v *big.Int) int {
 	if v.Sign() < 0 {
 		v, length = ToNegative(v)
 	}
+	fmt.Printf("AppendUnsconstInt: %08b\n", v.Bytes())
+	fmt.Printf("AppendUnsconstInt BUF: %08b\n", e.buf)
 	e.AppendWithLenDet(v.Bytes(), length)
+	fmt.Printf("AppendUnsconstInt BUF After: %08b\n", e.buf)
 	return length * 8
 }
 
@@ -148,7 +152,9 @@ func (e *BitEncoder) AppendWithLenDet(v []byte, length int) (nBits int, err erro
 	for i := 0; i < length; {
 		det, consBytes := LengthDet(length - i)
 		e.AppendBytes(det)
-		e.AppendBytes(v[i:i+(consBytes)])
+		fmt.Printf("After Determinant[Len Enc: %d]: %08b\n", e.bits, e.Bytes())
+		fmt.Printf("Appending Slice: %08b\n", v[i : i+(consBytes)])
+		e.AppendBytes(v[i : i+(consBytes)])
 		i += consBytes
 	}
 	return length, nil
