@@ -32,11 +32,10 @@ func (e *BitEncoder) AppendBit(b uint) int {
 	if nbits > 0 {
 		nbytes++
 	}
-	e.buf.SetBit(e.buf, int(7-nbits), b)
-
-	if nbits == 7 {
+	if nbits == 0 && nbytes > 0 {
 		e.buf = e.buf.Lsh(e.buf, 8)
 	}
+	e.buf.SetBit(e.buf, int(7-nbits), b)
 	e.bits++
 	return 1
 }
@@ -73,7 +72,6 @@ func (e *BitEncoder) Bytes() []byte {
 func (e *BitEncoder) Align() {
 	fmt.Println("Before align: ", e.bits)
 	e.bits = e.Len() * 8
-	//e.buf = e.buf.Lsh(e.buf, 8)
 	fmt.Println("After align: ", e.bits)
 }
 
@@ -132,9 +130,7 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 
 	switch {
 	case rng < 256:
-		//fmt.Println("BOOM: Adding Bits", value.BitLen(), value.Bytes())
 		length := bits.Len(uint(rng))
-		fmt.Printf("BOOM: Adding Bits Length: %d - %08b ", length, value.Bytes())
 		return e.AppendInt(value, length)
 
 	case rng == 256:

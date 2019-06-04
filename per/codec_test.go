@@ -181,10 +181,11 @@ func TestMultiEncoderInteger(t *testing.T) {
 	fmt.Printf("S5: Aligne : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
 	enc.AppendConstInt(big.NewInt(6), -8, 10, false)
 	fmt.Printf("S6: Add Const Int : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
+	enc.Align()
 	enc.AppendUnconstInt(big.NewInt(275))
 	enc.AppendBit(0)
 
 	if !equal(refAligned, enc.Bytes()) {
-		t.Errorf("per: codec: TestMultiEncoderInteger: expect: %08b, got: %08b\n", refAligned, enc.Bytes())
+		t.Errorf("per: codec: TestMultiEncoderInteger: expect: %08b, got: %08b - Bits %d\n", refAligned, enc.Bytes(), enc.bits)
 	}
 }
