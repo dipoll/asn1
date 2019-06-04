@@ -70,8 +70,10 @@ func (e *BitEncoder) Bytes() []byte {
 // Align aligns bits to bytes, so the next
 // encoded type will be padded to the next byte
 func (e *BitEncoder) Align() {
+	fmt.Println("Before align: ", e.bits)
 	e.bits = e.Len() * 8
 	e.buf = e.buf.Lsh(e.buf, 8)
+	fmt.Println("After align: ", e.bits)
 }
 
 // AppendInt appends integer of defined bit length
