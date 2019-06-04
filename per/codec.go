@@ -74,10 +74,11 @@ func (e *BitEncoder) Align() {
 	e.buf = e.buf.Lsh(e.buf, 8)
 }
 
-// AppendInteger appends integer of defined bit length
+// AppendInt appends integer of defined bit length
 // to the number
 func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 	_, b := e.FullLen()
+	
 	shift := int(8-b) - (nBits % 8)
 	switch {
 	case shift > 0:
@@ -86,7 +87,13 @@ func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 		num = num.Lsh(num, 8)
 		num = num.Rsh(num, uint(-1*shift))
 	}
+
 	pShift := (nBits - int(8-b) + 7) / 8
+	
+	if b == 0 {
+		pShift = ((nBits + 7) / 8)
+	}
+	
 	if pShift > 0 {
 		e.buf = e.buf.Lsh(e.buf, uint(pShift*8))
 	}
@@ -154,7 +161,9 @@ func (e *BitEncoder) AppendWithLenDet(v []byte, length int) (nBits int, err erro
 		e.AppendBytes(det)
 		fmt.Printf("After Determinant[Len Enc: %d]: %08b\n", e.bits, e.Bytes())
 		fmt.Printf("Appending Slice: %08b\n", v[i : i+(consBytes)])
+		fmt.Printf("Converted to big.Int: %08b\n", big.NewInt(0).SetBytes(v[i : i+(consBytes)]).Bytes())
 		e.AppendBytes(v[i : i+(consBytes)])
+		fmt.Printf("Full Number: %08b\n", e.buf)
 		i += consBytes
 	}
 	return length, nil
