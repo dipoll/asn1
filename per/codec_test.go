@@ -1,6 +1,7 @@
 package per
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 )
@@ -152,12 +153,12 @@ var unconstIntT = []struct {
 }{
 	{[]byte{0x01, 0xFD}, big.NewInt(-3)},
 	{[]byte{0x02, 0xFF, 0x7F}, big.NewInt(-129)},
-	{[]byte{0x08,0xE2,0x69,0x25,0x1F,0x52,0x1F,0x22, 0x43}, big.NewInt(-2132132132131233213)}}
+	{[]byte{0x08, 0xE2, 0x69, 0x25, 0x1F, 0x52, 0x1F, 0x22, 0x43}, big.NewInt(-2132132132131233213)}}
 
 func TestUnconstInt(t *testing.T) {
 	for n, v := range unconstIntT {
 		enc := NewBitEncoder()
-		enc.AppendUnsconstInt(v.number)
+		enc.AppendUnconstInt(v.number)
 
 		if !equal(v.data, enc.Bytes()) {
 			t.Errorf("per: codec: EncodeUnconstrainedInt [%d]: expect: %08b, got: %08b\n", n, v.data, enc.Bytes())
@@ -165,18 +166,25 @@ func TestUnconstInt(t *testing.T) {
 	}
 }
 
-func TestMultiEncoderInteger(t *testing.T){
-	refAligned := []byte{0x80,0x02,0xFF,0x54, 0x70, 0x02, 0x01, 0x13, 0x00}
-	refUnaligned := []byte{0x81,0x7F,0xAA,0x38,0x08,0x04,0x4C}
+func TestMultiEncoderInteger(t *testing.T) {
+	refAligned := []byte{0x80, 0x02, 0xFF, 0x54, 0x70, 0x02, 0x01, 0x13, 0x00}
+	//refUnaligned := []byte{0x81, 0x7F, 0xAA, 0x38, 0x08, 0x04, 0x4C}
 	enc := NewBitEncoder()
+	fmt.Printf("S1: Should one byte: %08b\n", enc.buf.Bytes())
 	enc.AppendBit(1)
+	fmt.Printf("S2: Should one byte: %08b\n", enc.buf.Bytes())
 	enc.Align()
-	enc.AppendUnsconstInt(big.NewInt(-172))
-	enc.AppendConstInt(big.NewInt(6),-8,10,true)
-	enc.AppendUnsconstInt(big.NewInt(275))
+	fmt.Printf("S3: Should one byte: %08b\n", enc.buf.Bytes())
+	enc.AppendUnconstInt(big.NewInt(-172))
+	fmt.Printf("S4: Unconst Int: %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
+	enc.Align()
+	fmt.Printf("S5: Aligne : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
+	enc.AppendConstInt(big.NewInt(6), -8, 10, false)
+	fmt.Printf("S6: Add Const Int : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
+	enc.AppendUnconstInt(big.NewInt(275))
 	enc.AppendBit(0)
-	
-	if ! equal(refUnaligned, enc.Bytes()) {
+
+	if !equal(refAligned, enc.Bytes()) {
 		t.Errorf("per: codec: TestMultiEncoderInteger: expect: %08b, got: %08b\n", refAligned, enc.Bytes())
 	}
 }

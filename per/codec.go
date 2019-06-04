@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"math/bits"
 )
 
 const (
@@ -72,7 +73,7 @@ func (e *BitEncoder) Bytes() []byte {
 func (e *BitEncoder) Align() {
 	fmt.Println("Before align: ", e.bits)
 	e.bits = e.Len() * 8
-	e.buf = e.buf.Lsh(e.buf, 8)
+	//e.buf = e.buf.Lsh(e.buf, 8)
 	fmt.Println("After align: ", e.bits)
 }
 
@@ -82,9 +83,9 @@ func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 	_, b := e.FullLen()
 
 	shift := int(8-b) - (nBits % 8)
-	
+	fmt.Println("Shift: ", shift, b, nBits)
 	switch {
-	case shift > 0 && b != 0:
+	case shift > 0 && (nBits%8) != 0:
 		num = num.Lsh(num, uint(shift))
 	case shift < 0:
 		num = num.Lsh(num, 8)
@@ -107,8 +108,8 @@ func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 
 // AppendBytes appends pure bytes to the end of buffer
 func (e *BitEncoder) AppendBytes(b []byte) int {
-	fmt.Printf("Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
-	defer fmt.Printf("AFTER  >>>>>>Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
+	//fmt.Printf("Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
+	//defer fmt.Printf("AFTER  >>>>>>Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
 	return e.AppendInt(big.NewInt(0).SetBytes(b), len(b)*8)
 
 }
@@ -123,7 +124,7 @@ func (e *BitEncoder) Reset() {
 // AppendConstInt appends constrained integer to the byte buffer.
 func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) int {
 	rng := max - min + 1
-	value = value.Add(value, big.NewInt(int64(min)))
+	value = value.Sub(value, big.NewInt(int64(min)))
 
 	if rng > 255 {
 		e.Align()
@@ -131,7 +132,10 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 
 	switch {
 	case rng < 256:
-		return e.AppendInt(value, value.BitLen())
+		//fmt.Println("BOOM: Adding Bits", value.BitLen(), value.Bytes())
+		length := bits.Len(uint(rng))
+		fmt.Printf("BOOM: Adding Bits Length: %d - %08b ", length, value.Bytes())
+		return e.AppendInt(value, length)
 
 	case rng == 256:
 		return e.AppendInt(value, 8)
@@ -146,30 +150,30 @@ func (e *BitEncoder) AppendConstInt(value *big.Int, min, max int, align bool) in
 
 // AppendUnconstInt appends unconstrained signed integer
 // to the byte buffer
-func (e *BitEncoder) AppendUnsconstInt(v *big.Int) int {
-	length := (v.BitLen()+7) / 8 
+func (e *BitEncoder) AppendUnconstInt(v *big.Int) int {
+	length := (v.BitLen() + 7) / 8
 	if v.Sign() < 0 {
 		v, length = ToNegative(v)
 	}
-	fmt.Printf("AppendUnsconstInt: %08b\n", v.Bytes())
-	fmt.Printf("AppendUnsconstInt BUF: %08b\n", e.buf)
+	//fmt.Printf("AppendUnsconstInt: %08b\n", v.Bytes())
+	//fmt.Printf("AppendUnsconstInt BUF: %08b\n", e.buf)
 	e.AppendWithLenDet(v.Bytes(), length)
-	fmt.Printf("AppendUnsconstInt BUF After: %08b\n", e.buf)
+	//fmt.Printf("AppendUnsconstInt BUF After: %08b\n", e.buf)
 	return length * 8
 }
 
-// AppendLenDet appends length determinant to the bytes
+// AppendWithLenDet appends length determinant to the bytes
 // to the internal buffer
 func (e *BitEncoder) AppendWithLenDet(v []byte, length int) (nBits int, err error) {
 	for i := 0; i < length; {
 		det, consBytes := LengthDet(length - i)
 		e.AppendBytes(det)
-		fmt.Println("Length: ", length)
-		fmt.Printf("After Determinant[Len Enc: %d]: %08b | Consumed Bytes: %d\n", e.bits, e.Bytes(), consBytes)
-		fmt.Printf("Appending Slice: %08b\n", v[i:i+(consBytes)])
-		fmt.Printf("Converted to big.Int: %08b\n", big.NewInt(0).SetBytes(v[i:i+(consBytes)]).Bytes())
+		//fmt.Println("Length: ", length)
+		//fmt.Printf("After Determinant[Len Enc: %d]: %08b | Consumed Bytes: %d\n", e.bits, e.Bytes(), consBytes)
+		//fmt.Printf("Appending Slice: %08b\n", v[i:i+(consBytes)])
+		//fmt.Printf("Converted to big.Int: %08b\n", big.NewInt(0).SetBytes(v[i:i+(consBytes)]).Bytes())
 		e.AppendBytes(v[i : i+(consBytes)])
-		fmt.Printf("Full Number: %08b\n", e.buf)
+		//fmt.Printf("Full Number: %08b\n", e.buf)
 		i += consBytes
 	}
 	return length, nil
