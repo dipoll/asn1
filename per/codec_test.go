@@ -1,7 +1,6 @@
 package per
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 )
@@ -185,9 +184,7 @@ func TestMultiEncoderInteger(t *testing.T) {
 
 	encU := NewBitEncoder()
 	encU.AppendBit(1)
-	fmt.Printf("After adding the Unconstrained Integer: %08b | Bytes(%d)\n", encU.Bytes(), encU.bits)
 	encU.AppendUnconstInt(big.NewInt(-172))
-	fmt.Printf("After adding the Unconstrained Integer: %08b | Bytes(%d)\n", encU.Bytes(), encU.bits)
 	encU.AppendConstInt(big.NewInt(6), -8, 10, true)
 	encU.AppendUnconstInt(big.NewInt(275))
 	encU.AppendBit(0)
