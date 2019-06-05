@@ -2,7 +2,6 @@ package per
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 	"math/bits"
 )
@@ -70,20 +69,22 @@ func (e *BitEncoder) Bytes() []byte {
 // Align aligns bits to bytes, so the next
 // encoded type will be padded to the next byte
 func (e *BitEncoder) Align() {
-	fmt.Println("Before align: ", e.bits)
 	e.bits = e.Len() * 8
-	fmt.Println("After align: ", e.bits)
 }
 
 // AppendInt appends integer of defined bit length
 // to the number
 func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 	_, b := e.FullLen()
+	trail := (nBits % 8)
+	full := nBits / 8
+	if full > 0 {
+		trail = 8
+	}
+	shift := int(8-b) - trail
 
-	shift := int(8-b) - (nBits % 8)
-	fmt.Println("Shift: ", shift, b, nBits)
 	switch {
-	case shift > 0 && (nBits%8) != 0:
+	case shift > 0 && trail != 0:
 		num = num.Lsh(num, uint(shift))
 	case shift < 0:
 		num = num.Lsh(num, 8)
@@ -106,8 +107,6 @@ func (e *BitEncoder) AppendInt(num *big.Int, nBits int) int {
 
 // AppendBytes appends pure bytes to the end of buffer
 func (e *BitEncoder) AppendBytes(b []byte) int {
-	//fmt.Printf("Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
-	//defer fmt.Printf("AFTER  >>>>>>Appending bytes with length: %d Current bits: %d | %08b\n", len(b), e.bits, e.buf.Bytes())
 	return e.AppendInt(big.NewInt(0).SetBytes(b), len(b)*8)
 
 }
@@ -151,10 +150,9 @@ func (e *BitEncoder) AppendUnconstInt(v *big.Int) int {
 	if v.Sign() < 0 {
 		v, length = ToNegative(v)
 	}
-	//fmt.Printf("AppendUnsconstInt: %08b\n", v.Bytes())
-	//fmt.Printf("AppendUnsconstInt BUF: %08b\n", e.buf)
+
 	e.AppendWithLenDet(v.Bytes(), length)
-	//fmt.Printf("AppendUnsconstInt BUF After: %08b\n", e.buf)
+
 	return length * 8
 }
 
@@ -164,12 +162,7 @@ func (e *BitEncoder) AppendWithLenDet(v []byte, length int) (nBits int, err erro
 	for i := 0; i < length; {
 		det, consBytes := LengthDet(length - i)
 		e.AppendBytes(det)
-		//fmt.Println("Length: ", length)
-		//fmt.Printf("After Determinant[Len Enc: %d]: %08b | Consumed Bytes: %d\n", e.bits, e.Bytes(), consBytes)
-		//fmt.Printf("Appending Slice: %08b\n", v[i:i+(consBytes)])
-		//fmt.Printf("Converted to big.Int: %08b\n", big.NewInt(0).SetBytes(v[i:i+(consBytes)]).Bytes())
 		e.AppendBytes(v[i : i+(consBytes)])
-		//fmt.Printf("Full Number: %08b\n", e.buf)
 		i += consBytes
 	}
 	return length, nil

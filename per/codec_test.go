@@ -168,24 +168,31 @@ func TestUnconstInt(t *testing.T) {
 
 func TestMultiEncoderInteger(t *testing.T) {
 	refAligned := []byte{0x80, 0x02, 0xFF, 0x54, 0x70, 0x02, 0x01, 0x13, 0x00}
-	//refUnaligned := []byte{0x81, 0x7F, 0xAA, 0x38, 0x08, 0x04, 0x4C}
+	refUnaligned := []byte{0x81, 0x7F, 0xAA, 0x38, 0x08, 0x04, 0x4C}
 	enc := NewBitEncoder()
-	fmt.Printf("S1: Should one byte: %08b\n", enc.buf.Bytes())
 	enc.AppendBit(1)
-	fmt.Printf("S2: Should one byte: %08b\n", enc.buf.Bytes())
 	enc.Align()
-	fmt.Printf("S3: Should one byte: %08b\n", enc.buf.Bytes())
 	enc.AppendUnconstInt(big.NewInt(-172))
-	fmt.Printf("S4: Unconst Int: %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
 	enc.Align()
-	fmt.Printf("S5: Aligne : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
 	enc.AppendConstInt(big.NewInt(6), -8, 10, false)
-	fmt.Printf("S6: Add Const Int : %08b - bits: %d\n", enc.buf.Bytes(), enc.bits)
 	enc.Align()
 	enc.AppendUnconstInt(big.NewInt(275))
 	enc.AppendBit(0)
 
 	if !equal(refAligned, enc.Bytes()) {
-		t.Errorf("per: codec: TestMultiEncoderInteger: expect: %08b, got: %08b - Bits %d\n", refAligned, enc.Bytes(), enc.bits)
+		t.Errorf("per: codec: TestMultiEncoderIntegerA: expect: %08b, got: %08b - Bits %d\n", refAligned, enc.Bytes(), enc.bits)
+	}
+
+	encU := NewBitEncoder()
+	encU.AppendBit(1)
+	fmt.Printf("After adding the Unconstrained Integer: %08b | Bytes(%d)\n", encU.Bytes(), encU.bits)
+	encU.AppendUnconstInt(big.NewInt(-172))
+	fmt.Printf("After adding the Unconstrained Integer: %08b | Bytes(%d)\n", encU.Bytes(), encU.bits)
+	encU.AppendConstInt(big.NewInt(6), -8, 10, true)
+	encU.AppendUnconstInt(big.NewInt(275))
+	encU.AppendBit(0)
+
+	if !equal(refUnaligned, encU.Bytes()) {
+		t.Errorf("per: codec: TestMultiEncoderIntegerU: expect: %08b, got: %08b - Bits %d\n", refUnaligned, encU.Bytes(), encU.bits)
 	}
 }
