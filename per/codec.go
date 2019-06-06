@@ -310,10 +310,17 @@ func ReadLenDet(pos int, s []byte) (readBits, chunkSize int, err error) {
 }
 
 // ReadConstInt reads constrained *big.Int from slice of bytes
-func ReadConstInt() (number *big.Int, nBits int, err error) {
+func ReadConstInt(pos, min, max int, buf []byte) (number *big.Int, nBits int, err error) {
+	rng := max - min + 1
+	number, nBits, err = ReadBits(pos, rng, buf)
+	number = number.Sub(number, big.NewInt(int64(min)))
 	return
 }
 
 // ReadChunks reads data that divided by length
 // determinant + chank of data
 // the result is concatenated slice of bytes
+func ReadChunks(pos int, buf []byte) (value *big.Int, nBits int, err error) {
+
+	return
+}

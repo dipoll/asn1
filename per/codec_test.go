@@ -154,7 +154,7 @@ var unconstIntT = []struct {
 	{[]byte{0x02, 0xFF, 0x7F}, big.NewInt(-129)},
 	{[]byte{0x08, 0xE2, 0x69, 0x25, 0x1F, 0x52, 0x1F, 0x22, 0x43}, big.NewInt(-2132132132131233213)}}
 
-func TestUnconstInt(t *testing.T) {
+func TestUnconstIntEncode(t *testing.T) {
 	for n, v := range unconstIntT {
 		enc := NewBitEncoder()
 		enc.AppendUnconstInt(v.number)
@@ -191,5 +191,30 @@ func TestMultiEncoderInteger(t *testing.T) {
 
 	if !equal(refUnaligned, encU.Bytes()) {
 		t.Errorf("per: codec: TestMultiEncoderIntegerU: expect: %08b, got: %08b - Bits %d\n", refUnaligned, encU.Bytes(), encU.bits)
+	}
+}
+
+type constrain struct {
+	Min   int
+	Max   int
+	Value *big.Int
+}
+
+var constIntT = []struct {
+	data    []byte
+	numbers []constrain
+}{
+	{[]byte{0x33, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(-2)}}},
+	{[]byte{0x36, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(4)}}}}
+
+func TestReadConstNumber(t *testing.T) {
+	for i, v := range constIntT {
+		pos := 0
+		for _, n := range v.numbers {
+			num, nBits, err := ReadConstInt(pos, n.Min, n.Max, v.data)
+			if err != nil {
+				t.Errorf("per: TestReadConstNumber: Uexpected Erro: ", err)
+			}
+		}
 	}
 }
