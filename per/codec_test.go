@@ -203,18 +203,26 @@ type constrain struct {
 var constIntT = []struct {
 	data    []byte
 	numbers []constrain
+	aligned bool
 }{
-	{[]byte{0x33, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(-2)}}},
-	{[]byte{0x36, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(4)}}}}
+	{[]byte{0x33, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(-2)}}, false},
+	{[]byte{0x36, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(4)}}, false},
+	{[]byte{0x04, 0x00, 0x3B}, []constrain{{0, 255, big.NewInt(4)}, {0, 256, big.NewInt(59)}}, true},
+	{[]byte{0x04, 0x1D, 0x80}, []constrain{{0, 255, big.NewInt(4)}, {0, 256, big.NewInt(59)}}, false}}
 
 func TestReadConstNumber(t *testing.T) {
 	for i, v := range constIntT {
 		pos := 0
 		for _, n := range v.numbers {
-			num, nBits, err := ReadConstInt(pos, n.Min, n.Max, v.data)
+			num, nBits, err := ReadConstInt(pos, n.Min, n.Max, v.aligned, v.data)
 			if err != nil {
-				t.Errorf("per: TestReadConstNumber: Uexpected Erro: ", err)
+				t.Errorf("per: TestReadConstNumber [%d]: Unexpected Error: %v", i, err)
 			}
+			if num.Cmp(n.Value) != 0 {
+				t.Errorf("per: TestReadConstNumber [%d]: expect: %v, got: %v", i, n.Value, num)
+				t.Errorf("per: TestReadConstNumber [%d]: datadump: %08b POS: %d NBITS: %d\n", i, v.data, pos, nBits)
+			}
+			pos += nBits
 		}
 	}
 }

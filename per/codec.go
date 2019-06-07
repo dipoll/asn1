@@ -245,6 +245,9 @@ func ReadBits(pos int, length int, s []byte) (*big.Int, int, error) {
 	startByte := pos / 8
 	startBit := pos % 8
 	out := big.NewInt(0)
+
+	reqBits := length
+
 	for i := startByte; i < len(s); i++ {
 		if length == 0 {
 			break
@@ -266,7 +269,7 @@ func ReadBits(pos int, length int, s []byte) (*big.Int, int, error) {
 	if length > 0 {
 		return out, length, errors.New("per: codec: partial read, not enough bytes")
 	}
-	return out, length, nil
+	return out, reqBits, nil
 }
 
 // ReadLenDet reads length determinant and returns
@@ -309,11 +312,39 @@ func ReadLenDet(pos int, s []byte) (readBits, chunkSize int, err error) {
 	return
 }
 
+// Align returns new position in bits and error
+func Align(pos int) (newPos int) {
+	trail := (pos % 8)
+	if trail == 0 {
+		newPos = pos
+		return
+	}
+	newPos = pos + (8 - trail)
+	return
+}
+
 // ReadConstInt reads constrained *big.Int from slice of bytes
-func ReadConstInt(pos, min, max int, buf []byte) (number *big.Int, nBits int, err error) {
-	rng := max - min + 1
-	number, nBits, err = ReadBits(pos, rng, buf)
-	number = number.Sub(number, big.NewInt(int64(min)))
+func ReadConstInt(pos, min, max int, isAligned bool, buf []byte) (number *big.Int, nBits int, err error) {
+	rng := uint(max - min + 1)
+	bitsToRead := bits.Len(rng)
+	switch {
+	case rng < 256:
+		break
+	case rng == 256:
+		if isAligned {
+			pos = Align(pos)
+		}
+		bitsToRead = 8
+
+	case rng <= 65536:
+		if isAligned {
+			pos = Align(pos)
+		}
+		bitsToRead = 16
+	}
+
+	number, nBits, err = ReadBits(pos, bitsToRead, buf)
+	number = number.Add(number, big.NewInt(int64(min)))
 	return
 }
 
