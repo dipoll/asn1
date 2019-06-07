@@ -205,10 +205,11 @@ var constIntT = []struct {
 	numbers []constrain
 	aligned bool
 }{
-	{[]byte{0x33, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(-2)}}, false},
-	{[]byte{0x36, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(4)}}, false},
+	{[]byte{0x33, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(-2)}}, true},
+	{[]byte{0x36, 0x00}, []constrain{{0, 10, big.NewInt(3)}, {-8, 12, big.NewInt(4)}}, true},
 	{[]byte{0x04, 0x00, 0x3B}, []constrain{{0, 255, big.NewInt(4)}, {0, 256, big.NewInt(59)}}, true},
-	{[]byte{0x04, 0x1D, 0x80}, []constrain{{0, 255, big.NewInt(4)}, {0, 256, big.NewInt(59)}}, false}}
+	{[]byte{0x04, 0x1D, 0x80}, []constrain{{0, 255, big.NewInt(4)}, {0, 256, big.NewInt(59)}}, false},
+	{[]byte{0x01, 0xEF, 0x22, 0x44, 0x00}, []constrain{{0, 54000, big.NewInt(495)}, {-40000, 50000, big.NewInt(-22456)}}, false}}
 
 func TestReadConstNumber(t *testing.T) {
 	for i, v := range constIntT {
@@ -221,6 +222,7 @@ func TestReadConstNumber(t *testing.T) {
 			if num.Cmp(n.Value) != 0 {
 				t.Errorf("per: TestReadConstNumber [%d]: expect: %v, got: %v", i, n.Value, num)
 				t.Errorf("per: TestReadConstNumber [%d]: datadump: %08b POS: %d NBITS: %d\n", i, v.data, pos, nBits)
+				t.Errorf("per: is aligned: %v\n", v.aligned)
 			}
 			pos += nBits
 		}

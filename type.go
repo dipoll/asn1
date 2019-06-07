@@ -1,10 +1,16 @@
 package asn1per
 
-type PackType uint8
+
+type encoder interface {
+	Encode() int
+}
 
 
-const (
-	ALIGNED		PackType = iota
-	UNALIGNED
-)
+type Validator interface {
+	Validate() error
+} 
 
+type IntRange struct {
+	Min		int
+	Max		int
+}
