@@ -4,16 +4,25 @@ import (
 	"testing"
 )
 
+var rangeParseT = []struct{
+	input	string
+	result  []*IntRange
+}{
+	{ "(4000505005|7888888)", []*IntRange{NewSingleRange(4000505005), NewSingleRange(7888888)}}}
+
 
 func TestParseRange(t *testing.T){
-	rng, err := ParseRange("(4000505005|7888888)")
-	if len(rng) != 2 || err != nil {
-		t.Errorf("bad parsing of range|size numbers")
-	}
-	if *rng[0].Max != 4000505005 {
-		t.Errorf("bad parsing of number 4000505005")
-	}
-	if *rng[1].Max != 7888888 {
-			t.Errorf("bad parsing of number 7888888")
+
+	for i, v := range rangeParseT {
+		rng, err := ParseRange(v.input)
+		if len(rng) != len(v.result) || err != nil {
+			t.Errorf("asn1: [%d] bad parsing of range|size numbers", i )
+		}
+		for num, rValue := range rng {
+			if !rValue.Equals(v.result[num]) {
+				t.Errorf("asn1: [%d] bad parsing of range|size numbers: expect: %v, got: %v", i,v.result[num] ,rValue )
+			}
+			
+		}
 	}
 }

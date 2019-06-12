@@ -12,6 +12,40 @@ type IntRange struct {
 	Max *int
 }
 
+func (r IntRange) Equals(other *IntRange) bool {
+	if other.Min != nil && r.Min != nil {
+		if *other.Min != *r.Min {
+			return false
+		}
+	} else if other.Min == nil && r.Min == nil {
+
+	} else {
+		return false
+	}
+	if other.Max != nil && r.Max != nil {
+		if *other.Max != *r.Max {
+			return false
+		}
+	} else if other.Max == nil && r.Max == nil {
+
+	} else {
+		return false
+	}
+
+	return true
+
+}
+
+// NewIntRange
+func NewIntRange(min, max int) *IntRange {
+	return &IntRange{&min, &max}
+}
+
+// NewIntRange
+func NewSingleRange(value int) *IntRange {
+	return &IntRange{nil, &value}
+}
+
 // ParseRange parsers string into
 // set of ranges:
 //	(1..5) - simple single range
