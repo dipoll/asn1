@@ -27,7 +27,7 @@ func (r IntRange) Equals(other *IntRange) bool {
 			return false
 		}
 	} else if other.Max == nil && r.Max == nil {
-
+		return true
 	} else {
 		return false
 	}

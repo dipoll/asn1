@@ -2,11 +2,13 @@ package asn1per
 
 import (
 	"encoding/asn1"
+	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
 
-// Copied code from Go's standard encoding/asn1 
+// Copied code from Go's standard encoding/asn1
 // most of types are imported from original libarary as well
 
 // ASN.1 has IMPLICIT and EXPLICIT tags, which can be translated as "instead
@@ -98,4 +100,17 @@ func ParseFieldParameters(str string) (ret FieldParameters) {
 		}
 	}
 	return
+}
+
+// GetASN1Tag returns ASN1 tag and parsed params
+// this is
+func GetTagParams(v reflect.Value) (int, *FieldParameters) {
+
+	switch v.Kind() {
+	case reflect.Struct:
+		fmt.Println("This value is a struct: name: ", v.String())
+		fmt.Println()
+	}
+	fmt.Println(v)
+	return 0, nil
 }
