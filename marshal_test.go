@@ -8,7 +8,9 @@ var rangeParseT = []struct{
 	input	string
 	result  []*IntRange
 }{
-	{ "(4000505005|7888888)", []*IntRange{NewSingleRange(4000505005), NewSingleRange(7888888)}}}
+	{ "(4000505005|7888888)", []*IntRange{NewSingleRange(4000505005), NewSingleRange(7888888)}},
+	{ "(-17..28|40..50|6)", []*IntRange{NewIntRange(-17,28), NewIntRange(40,50) ,NewSingleRange(6)}},
+	{ "(20..35)", []*IntRange{NewIntRange(20,35)}}}
 
 
 func TestParseRange(t *testing.T){

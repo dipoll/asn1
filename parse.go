@@ -27,8 +27,8 @@ import (
 // don't support that here. We support a single layer of EXPLICIT or IMPLICIT
 // tagging with tag strings on the fields of a structure.
 
-// fieldParameters is the parsed representation of tag string from a structure field.
-type fieldParameters struct {
+// FieldParameters is the parsed representation of tag string from a structure field.
+type FieldParameters struct {
 	optional     bool   // true iff the field is OPTIONAL
 	explicit     bool   // true iff an EXPLICIT tag is in use.
 	application  bool   // true iff an APPLICATION tag is in use.
@@ -44,10 +44,10 @@ type fieldParameters struct {
 	//   if explicit is set, tag is non-nil.
 }
 
-// Given a tag string with the format specified in the package comment,
+// ParseFieldParameters Given a tag string with the format specified in the package comment,
 // parseFieldParameters will parse it into a fieldParameters structure,
 // ignoring unknown parts of the string.
-func ParseFieldParameters(str string) (ret fieldParameters) {
+func ParseFieldParameters(str string) (ret FieldParameters) {
 	for _, part := range strings.Split(str, ",") {
 		switch {
 		case part == "optional":
