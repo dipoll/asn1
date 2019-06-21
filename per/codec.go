@@ -2,7 +2,6 @@ package per
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 	"math/bits"
 )
@@ -341,7 +340,6 @@ func ReadConstInt(pos, min, max int, isAligned bool, buf []byte) (number *big.In
 		bitsToRead = bits.Len(rng)
 		if isAligned {
 			bitsToRead = Align(bitsToRead)
-			fmt.Println("Aligned:", bitsToRead)
 		}
 	}
 	number, nBits, err = ReadBits(pos, bitsToRead, buf)

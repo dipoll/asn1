@@ -104,13 +104,19 @@ func ParseFieldParameters(str string) (ret FieldParameters) {
 
 // GetASN1Tag returns ASN1 tag and parsed params
 // this is
-func GetTagParams(v reflect.Value) (int, *FieldParameters) {
+func GetTagParams(value interface{}) (int, *FieldParameters) {
+	v := reflect.TypeOf(value)
 
 	switch v.Kind() {
 	case reflect.Struct:
 		fmt.Println("This value is a struct: name: ", v.String())
-		fmt.Println()
+		for i := 0; i < v.NumField(); i++ {
+			f := v.Field(i)
+			fmt.Println("Name: ", f.Name)
+			fmt.Println("Tag is:", f.Tag.Get("asn1"))
+		}
+	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+		fmt.Println("Value: ", v)
 	}
-	fmt.Println(v)
 	return 0, nil
 }
