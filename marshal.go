@@ -1,10 +1,16 @@
 package asn1per
 
 import (
+	"encoding/asn1"
 	"errors"
 	"strconv"
 	"strings"
 )
+
+// Extension of the ASN1 tags provided in encoding/asn1 module
+//
+
+var o asn1.TagInteger
 
 // IntRange represents integer range or size
 type IntRange struct {

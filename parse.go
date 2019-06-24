@@ -102,7 +102,7 @@ func ParseFieldParameters(str string) (ret FieldParameters) {
 	return
 }
 
-// GetASN1Tag returns ASN1 tag and parsed params
+// GetTagParams returns ASN1 tag and parsed params
 // this is
 func GetTagParams(value interface{}) (int, *FieldParameters) {
 	v := reflect.TypeOf(value)
@@ -116,7 +116,30 @@ func GetTagParams(value interface{}) (int, *FieldParameters) {
 			fmt.Println("Tag is:", f.Tag.Get("asn1"))
 		}
 	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		fmt.Println("Value: ", v)
+		return asn1.TagInteger, &FieldParameters{}
 	}
 	return 0, nil
+}
+
+type encoder interface {
+	// Encode encodes this element by writing Len() bytes to dst.
+	Encode(dst []byte)
+}
+
+// Codec interface represents an ASN1 codec
+type Codec interface {
+	GetMarshaller(typ reflect.Type, param *FieldParameters) encoder
+	GetUnmarshaller(typ reflect.Type, param *FieldParameters) decoder
+}
+
+// CodecBuilder prepare marshaller and unmarshaller
+// with provided coder/encoder for ASN1 structures
+// Provides ability to cache decoders for the structures
+type CodecBuilder struct {
+	cacheE map[string][]encoder
+	cacheD map[string][]decoder
+}
+
+func (c *CodecBuilder) addType() error {
+
 }
