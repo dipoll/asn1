@@ -1,4 +1,4 @@
-package asn1per
+package asn1
 
 import (
 	"encoding/asn1"
@@ -119,27 +119,4 @@ func GetTagParams(value interface{}) (int, *FieldParameters) {
 		return asn1.TagInteger, &FieldParameters{}
 	}
 	return 0, nil
-}
-
-type encoder interface {
-	// Encode encodes this element by writing Len() bytes to dst.
-	Encode(dst []byte)
-}
-
-// Codec interface represents an ASN1 codec
-type Codec interface {
-	GetMarshaller(typ reflect.Type, param *FieldParameters) encoder
-	GetUnmarshaller(typ reflect.Type, param *FieldParameters) decoder
-}
-
-// CodecBuilder prepare marshaller and unmarshaller
-// with provided coder/encoder for ASN1 structures
-// Provides ability to cache decoders for the structures
-type CodecBuilder struct {
-	cacheE map[string][]encoder
-	cacheD map[string][]decoder
-}
-
-func (c *CodecBuilder) addType() error {
-
 }
