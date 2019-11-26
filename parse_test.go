@@ -1,4 +1,4 @@
-package asn1per
+package asn1
 
 import (
 	"fmt"
