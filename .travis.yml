@@ -1,0 +1,17 @@
+language: go
+
+go:
+  - 1.13
+
+matrix:
+  fast_finish: true
+
+notifications:
+  email: false
+
+before_install:
+  - go get github.com/golang/lint/golint
+
+script:
+  - golint
+  - go test
