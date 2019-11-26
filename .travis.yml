@@ -9,9 +9,5 @@ matrix:
 notifications:
   email: false
 
-before_install:
-  - go get github.com/golang/lint/golint
-
 script:
-  - golint
   - go test
