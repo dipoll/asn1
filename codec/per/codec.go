@@ -2,8 +2,10 @@ package per
 
 import (
 	"errors"
+	"github.com/dipoll/asn1/spec"
 	"math/big"
 	"math/bits"
+	"reflect"
 )
 
 const (
@@ -353,4 +355,14 @@ func ReadConstInt(pos, min, max int, isAligned bool, buf []byte) (number *big.In
 func ReadChunks(pos int, buf []byte) (value *big.Int, nBits int, err error) {
 
 	return
+}
+
+// Encoder PER encoding implementation
+type Encoder struct {
+	bitC      BitEncoder
+	isAligned bool
+}
+
+func (e *Encoder) EncodeInteger(v reflect.Value, opts *spec.FieldSpec) {
+
 }

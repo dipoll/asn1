@@ -8,44 +8,6 @@ import (
 	"strings"
 )
 
-// Copied code from Go's standard encoding/asn1
-// most of types are imported from original libarary as well
-
-// ASN.1 has IMPLICIT and EXPLICIT tags, which can be translated as "instead
-// of" and "in addition to". When not specified, every primitive type has a
-// default tag in the UNIVERSAL class.
-//
-// For example: a BIT STRING is tagged [UNIVERSAL 3] by default (although ASN.1
-// doesn't actually have a UNIVERSAL keyword). However, by saying [IMPLICIT
-// CONTEXT-SPECIFIC 42], that means that the tag is replaced by another.
-//
-// On the other hand, if it said [EXPLICIT CONTEXT-SPECIFIC 10], then an
-// /additional/ tag would wrap the default tag. This explicit tag will have the
-// compound flag set.
-//
-// (This is used in order to remove ambiguity with optional elements.)
-//
-// You can layer EXPLICIT and IMPLICIT tags to an arbitrary depth, however we
-// don't support that here. We support a single layer of EXPLICIT or IMPLICIT
-// tagging with tag strings on the fields of a structure.
-
-// FieldParameters is the parsed representation of tag string from a structure field.
-type FieldParameters struct {
-	optional     bool   // true iff the field is OPTIONAL
-	explicit     bool   // true iff an EXPLICIT tag is in use.
-	application  bool   // true iff an APPLICATION tag is in use.
-	private      bool   // true iff a PRIVATE tag is in use.
-	defaultValue *int64 // a default value for INTEGER typed fields (maybe nil).
-	tag          *int   // the EXPLICIT or IMPLICIT tag (maybe nil).
-	stringType   int    // the string tag to use when marshaling.
-	timeType     int    // the time tag to use when marshaling.
-	set          bool   // true iff this should be encoded as a SET
-	omitEmpty    bool   // true iff this should be omitted if empty when marshaling.
-
-	// Invariants:
-	//   if explicit is set, tag is non-nil.
-}
-
 // ParseFieldParameters Given a tag string with the format specified in the package comment,
 // parseFieldParameters will parse it into a fieldParameters structure,
 // ignoring unknown parts of the string.

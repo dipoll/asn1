@@ -9,11 +9,11 @@ package asn1
 		- real
 		- bitstring
 		- octetstring
-		- null 
+		- null
 		- sequence
 		- sequence-of
 		- set
-		- set-of	
+		- set-of
 
 	Online testing could be done using perfect tool from Noklava:
 	https://asn1.io/asn1playground/

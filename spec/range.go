@@ -1,4 +1,4 @@
-package asn1
+package spec
 
 import (
 	"errors"
