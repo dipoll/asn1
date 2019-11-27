@@ -10,4 +10,4 @@ notifications:
   email: false
 
 script:
-  - go test ..
+  - go test ./..
